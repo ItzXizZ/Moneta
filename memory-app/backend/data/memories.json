@@ -1,0 +1,100 @@
+{
+  "memories": [
+    {
+      "id": "mem_0f5e33aa-5f80-4579-a63b-cc0afb77a9d7",
+      "content": "I have mixed feelings about keelia",
+      "score": 6.06,
+      "tags": [],
+      "created": "2025-06-24"
+    },
+    {
+      "id": "mem_ced2c12c-8068-44c2-bf21-a9f0027f0bc3",
+      "content": "I enjoy playing fortnite in the summer",
+      "score": 6.06,
+      "tags": [],
+      "created": "2025-06-24"
+    },
+    {
+      "id": "mem_0fa5607a-e851-480e-ba7e-d50e162323e1",
+      "content": "I hate Jaden",
+      "score": 5.95,
+      "tags": [],
+      "created": "2025-06-24"
+    },
+    {
+      "id": "mem_1ddb280c-eae4-4894-a285-9914e125262c",
+      "content": "Worker 3 memory 2: Test memory from concurrent worker",
+      "score": 1.49,
+      "tags": [
+        "test",
+        "worker3"
+      ],
+      "created": "2025-06-24"
+    },
+    {
+      "id": "mem_b18a13f5-d313-4de1-8fd2-913d7e921b38",
+      "content": "Worker 3 memory 3: Test memory from concurrent worker",
+      "score": 1.49,
+      "tags": [
+        "test",
+        "worker3"
+      ],
+      "created": "2025-06-24"
+    },
+    {
+      "id": "mem_c6c15a6c-f0a6-42ee-ae1a-025d4cad2751",
+      "content": "Worker 3 memory 1: Test memory from concurrent worker",
+      "score": 1.4,
+      "tags": [
+        "test",
+        "worker3"
+      ],
+      "created": "2025-06-24"
+    },
+    {
+      "id": "mem_5c771ecc-7520-462e-8a4f-a895678fdf62",
+      "content": "I am very smart",
+      "score": 1.3,
+      "tags": [],
+      "created": "2025-06-24"
+    },
+    {
+      "id": "mem_5c301e11-f0ee-47eb-be6d-d1a1e20e3837",
+      "content": "I have an IQ (intelligence quotient) of 145",
+      "score": 0.1,
+      "tags": [],
+      "created": "2025-06-24"
+    },
+    {
+      "id": "mem_6036ca7a-a8b3-4159-bfe2-da6088decc21",
+      "content": "I love pizza",
+      "score": 0.0,
+      "tags": [],
+      "created": "2025-06-24"
+    },
+    {
+      "id": "mem_51cbbd0f-00f6-44a6-95a0-cbc7c21c295f",
+      "content": "I love Italian Food",
+      "score": 0.0,
+      "tags": [],
+      "created": "2025-06-24"
+    },
+    {
+      "id": "mem_e0d74f5b-608d-4b90-a57a-44c5efed4016",
+      "content": "I am a genius",
+      "score": 0.0,
+      "tags": [],
+      "created": "2025-06-24"
+    },
+    {
+      "id": "mem_31752182-d224-4c5b-b675-4f9171516545",
+      "content": "I love lemonade.",
+      "score": 0.0,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-24"
+    }
+  ]
+}
