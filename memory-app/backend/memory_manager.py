@@ -135,9 +135,20 @@ class MemoryManager:
             
             # Atomic move to replace the original file
             if os.name == 'nt':  # Windows
-                if os.path.exists(self.db_path):
-                    os.remove(self.db_path)
-                shutil.move(temp_path, self.db_path)
+                # On Windows, try multiple times due to file locking issues
+                max_attempts = 3
+                for attempt in range(max_attempts):
+                    try:
+                        if os.path.exists(self.db_path):
+                            os.remove(self.db_path)
+                        shutil.move(temp_path, self.db_path)
+                        break
+                    except (OSError, PermissionError) as e:
+                        if attempt < max_attempts - 1:
+                            time.sleep(0.1 * (attempt + 1))  # Exponential backoff
+                            continue
+                        else:
+                            raise e
             else:  # Unix/Linux
                 shutil.move(temp_path, self.db_path)
                 

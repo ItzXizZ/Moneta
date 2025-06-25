@@ -2,6 +2,9 @@
 
 import sys
 import os
+import threading
+import time
+import requests
 from openai import OpenAI
 from flask import Flask, request, jsonify, render_template_string
 import datetime
@@ -50,6 +53,7 @@ HTML_TEMPLATE = '''
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>ChatGPT Clone</title>
+    <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
     <style>
         /* Purple Gradient Palette */
         :root {
@@ -135,31 +139,25 @@ HTML_TEMPLATE = '''
         }
 
         .container {
-            max-width: 1200px;
+            max-width: 1600px;
             margin: 0 auto;
-            padding: 20px;
+            padding: 10px;
             display: flex;
             flex-direction: column;
             height: 100vh;
+            gap: 10px;
+        }
+
+        .main-content {
+            display: grid;
+            grid-template-columns: 1fr 1.2fr;
+            gap: 10px;
+            flex: 1;
+            min-height: 0;
         }
 
         .header {
-            text-align: center;
-            margin-bottom: 30px;
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 20px;
-            box-shadow: var(--shadow-floating);
-        }
-
-        .header h1 {
-            color: var(--primary-400);
-            margin: 0;
-            font-size: 2.5rem;
-            font-weight: 700;
-            text-shadow: 0 0 20px rgba(168, 85, 247, 0.5);
+            display: none; /* Remove the header entirely */
         }
 
         .chat-container {
@@ -175,15 +173,18 @@ HTML_TEMPLATE = '''
         }
 
         .chat-header {
-            background: linear-gradient(45deg, var(--primary-700), var(--primary-600));
-            padding: 15px 20px;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            padding: 8px 16px;
             border-bottom: 1px solid var(--glass-border);
         }
 
         .chat-header h2 {
             margin: 0;
-            color: white;
-            font-size: 1.2rem;
+            color: var(--primary-300);
+            font-size: 0.9rem;
+            font-weight: 500;
+            opacity: 0.8;
         }
 
         .chat-messages {
@@ -301,22 +302,25 @@ HTML_TEMPLATE = '''
         }
 
         .send-button {
-            background: linear-gradient(45deg, var(--primary-600), var(--primary-700));
-            border: none;
-            border-radius: 12px;
-            padding: 15px 25px;
-            color: white;
-            font-size: 1rem;
-            font-weight: 600;
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--primary-400);
+            border-radius: 8px;
+            padding: 12px 20px;
+            color: var(--primary-200);
+            font-size: 0.9rem;
+            font-weight: 500;
             cursor: pointer;
             transition: all 0.3s var(--ease-smooth);
-            box-shadow: var(--shadow-floating);
+            box-shadow: 0 2px 8px rgba(168, 85, 247, 0.2);
         }
 
         .send-button:hover {
-            transform: translateY(-2px);
-            box-shadow: var(--shadow-elevated);
-            background: linear-gradient(45deg, var(--primary-500), var(--primary-600));
+            background: rgba(168, 85, 247, 0.2);
+            border-color: var(--primary-300);
+            color: var(--primary-100);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(168, 85, 247, 0.3);
         }
 
         .send-button:active {
@@ -325,46 +329,61 @@ HTML_TEMPLATE = '''
 
         .thread-controls {
             display: flex;
-            gap: 10px;
-            margin-bottom: 20px;
+            gap: 6px;
+            margin-bottom: 8px;
             flex-wrap: wrap;
-        }
-
-        .new-thread-btn, .clear-thread-btn, .end-thread-btn, .memory-toggle-btn {
-            background: linear-gradient(45deg, var(--primary-600), var(--primary-700));
-            border: none;
-            border-radius: 8px;
-            padding: 10px 20px;
-            color: white;
-            font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s var(--ease-smooth);
-        }
-
-        .new-thread-btn:hover, .clear-thread-btn:hover, .end-thread-btn:hover, .memory-toggle-btn:hover {
-            transform: translateY(-2px);
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            padding: 8px;
             box-shadow: var(--shadow-floating);
         }
 
-        .clear-thread-btn {
-            background: linear-gradient(45deg, #dc2626, #b91c1c);
+        .new-thread-btn, .clear-thread-btn, .end-thread-btn, .memory-toggle-btn {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 6px;
+            padding: 6px 12px;
+            color: var(--gray-200);
+            font-weight: 500;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.3s var(--ease-smooth);
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         }
 
-        .end-thread-btn {
-            background: linear-gradient(45deg, #059669, #047857);
+        .new-thread-btn:hover, .clear-thread-btn:hover, .end-thread-btn:hover, .memory-toggle-btn:hover {
+            background: rgba(168, 85, 247, 0.2);
+            border-color: var(--primary-400);
+            color: var(--primary-200);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 8px rgba(168, 85, 247, 0.2);
         }
 
-        .memory-toggle-btn {
-            background: linear-gradient(45deg, var(--primary-500), var(--primary-600));
+        .clear-thread-btn:hover {
+            background: rgba(220, 38, 38, 0.2);
+            border-color: #dc2626;
+            color: #fca5a5;
+        }
+
+        .end-thread-btn:hover {
+            background: rgba(5, 150, 105, 0.2);
+            border-color: #059669;
+            color: #6ee7b7;
         }
 
         .memory-toggle-btn.active {
-            background: linear-gradient(45deg, #059669, #047857);
-            box-shadow: 0 0 15px rgba(5, 150, 105, 0.4);
+            background: rgba(5, 150, 105, 0.3);
+            border-color: #059669;
+            color: #6ee7b7;
+            box-shadow: 0 0 10px rgba(5, 150, 105, 0.3);
         }
 
         .memory-toggle-btn.disabled {
-            background: linear-gradient(45deg, var(--gray-600), var(--gray-700));
+            background: rgba(75, 85, 99, 0.3);
+            border-color: var(--gray-600);
             cursor: not-allowed;
             opacity: 0.6;
         }
@@ -433,21 +452,137 @@ HTML_TEMPLATE = '''
             margin-left: 8px;
         }
 
-        @media (max-width: 768px) {
-            .container {
-                padding: 10px;
+        /* Memory Network Visualization */
+        .memory-network-container {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 12px;
+            box-shadow: var(--shadow-floating);
+            flex: 1;
+            min-height: 400px;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .memory-network-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 8px;
+            flex-shrink: 0;
+        }
+
+        .memory-network-header h3 {
+            color: var(--primary-300);
+            margin: 0;
+            font-size: 1rem;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+
+        .memory-network-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .threshold-slider {
+            background: var(--gray-700);
+            border: 1px solid var(--glass-border);
+            border-radius: 8px;
+            padding: 5px 10px;
+            color: var(--gray-200);
+            font-size: 0.9rem;
+        }
+
+        .memory-network-stats {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+            font-size: 0.75rem;
+            color: var(--gray-400);
+            flex-shrink: 0;
+        }
+
+        .stat-item {
+            background: rgba(31, 41, 55, 0.8);
+            backdrop-filter: var(--glass-blur);
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .stat-value {
+            color: var(--primary-300);
+            font-weight: 500;
+        }
+
+        #memory-network {
+            flex: 1;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            background: rgba(17, 24, 39, 0.9);
+            backdrop-filter: var(--glass-blur);
+            position: relative;
+            overflow: hidden;
+            min-height: 300px;
+        }
+
+        .network-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--gray-400);
+            font-style: italic;
+        }
+
+        .memory-activity-indicator {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--primary-600);
+            color: white;
+            padding: 5px 10px;
+            border-radius: 8px;
+            font-size: 0.8rem;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .memory-activity-indicator.active {
+            opacity: 1;
+        }
+
+        @media (max-width: 1024px) {
+            .main-content {
+                grid-template-columns: 1fr;
+                grid-template-rows: 1fr 1fr;
             }
             
-            .header h1 {
-                font-size: 2rem;
+            .memory-network-container {
+                min-height: 300px;
+            }
+            
+            #memory-network {
+                height: 240px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 8px;
             }
             
             .message {
-                max-width: 90%;
+                max-width: 95%;
             }
             
             .chat-input-form {
                 flex-direction: column;
+                gap: 8px;
             }
             
             .send-button {
@@ -455,56 +590,98 @@ HTML_TEMPLATE = '''
             }
             
             .thread-controls {
-                flex-direction: column;
+                flex-wrap: wrap;
+                justify-content: center;
+            }
+            
+            .memory-network-stats {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+            
+            .stat-item {
+                font-size: 0.7rem;
+                padding: 4px 8px;
             }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="header">
-            <h1>🤖 ChatGPT Clone</h1>
-        </div>
-        
         <div class="thread-controls">
-            <button class="new-thread-btn" onclick="newThread()">New Thread</button>
-            <button class="clear-thread-btn" onclick="clearThread()">Clear Thread</button>
-            <button class="end-thread-btn" onclick="endThread()">💾 End & Save Memories</button>
+            <button class="new-thread-btn" onclick="newThread()">New</button>
+            <button class="clear-thread-btn" onclick="clearThread()">Clear</button>
+            <button class="end-thread-btn" onclick="endThread()">💾 Save</button>
             <button class="memory-toggle-btn" id="memory-toggle" onclick="toggleMemorySearch()">
-                <span id="memory-toggle-text">🔍 Search Memories</span>
+                <span id="memory-toggle-text">🔍 Memories</span>
             </button>
         </div>
         
-        <div class="chat-container">
-            <div class="chat-header">
-                <h2 id="thread-title">New Conversation</h2>
-            </div>
-            
-            <div class="chat-messages" id="chat-messages">
-                <div class="empty-state">
-                    Start a new conversation by typing a message below...
+        <div class="main-content">
+            <!-- Chat Section -->
+            <div class="chat-container">
+                <div class="chat-header">
+                    <h2 id="thread-title">Conversation</h2>
+                </div>
+                
+                <div class="chat-messages" id="chat-messages">
+                    <div class="empty-state">
+                        Start a conversation...
+                    </div>
+                </div>
+                
+                <div class="searching-memories-indicator" id="searching-memories-indicator">
+                    🔎 Searching memories...
+                </div>
+                
+                <div class="typing-indicator" id="typing-indicator">
+                    Assistant is typing...
+                </div>
+                
+                <div class="chat-input-container">
+                    <form class="chat-input-form" id="chat-form">
+                        <textarea 
+                            class="chat-input" 
+                            id="chat-input" 
+                            placeholder="Type your message here..."
+                            rows="1"
+                            onkeydown="handleKeyDown(event)"
+                        ></textarea>
+                        <button type="submit" class="send-button">Send</button>
+                    </form>
                 </div>
             </div>
             
-            <div class="searching-memories-indicator" id="searching-memories-indicator">
-                🔎 Searching memories...
-            </div>
-            
-            <div class="typing-indicator" id="typing-indicator">
-                Assistant is typing...
-            </div>
-            
-            <div class="chat-input-container">
-                <form class="chat-input-form" id="chat-form">
-                    <textarea 
-                        class="chat-input" 
-                        id="chat-input" 
-                        placeholder="Type your message here..."
-                        rows="1"
-                        onkeydown="handleKeyDown(event)"
-                    ></textarea>
-                    <button type="submit" class="send-button">Send</button>
-                </form>
+            <!-- Memory Network Section -->
+            <div class="memory-network-container" id="memory-network-container">
+                <div class="memory-network-header">
+                    <h3>🧠 Memory Network</h3>
+                    <div class="memory-network-controls">
+                        <label for="threshold-slider" style="color: var(--gray-400); font-size: 0.8rem;">Threshold:</label>
+                        <input type="range" id="threshold-slider" class="threshold-slider" min="0.1" max="0.8" step="0.05" value="0.35">
+                        <span id="threshold-value" style="color: var(--primary-400); font-size: 0.8rem;">0.35</span>
+                    </div>
+                </div>
+                
+                <div class="memory-network-stats">
+                    <div class="stat-item">
+                        <span>Memories: </span><span class="stat-value" id="memory-count">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Connections: </span><span class="stat-value" id="connection-count">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Active: </span><span class="stat-value" id="active-memories">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Last: </span><span class="stat-value" id="last-search">None</span>
+                    </div>
+                </div>
+                
+                <div id="memory-network">
+                    <div class="network-loading">Loading memory network...</div>
+                    <div class="memory-activity-indicator" id="activity-indicator">🔥 Memory Activity</div>
+                </div>
             </div>
         </div>
     </div>
@@ -513,6 +690,13 @@ HTML_TEMPLATE = '''
         let currentThreadId = null;
         let isTyping = false;
         let memorySearchEnabled = false;
+        
+        // Memory Network Variables
+        let memoryNetwork = null;
+        let networkData = { nodes: [], edges: [] };
+        let activeMemories = new Set();
+        let lastActivatedMemories = [];
+        let animationTimeout = null;
 
         // Auto-resize textarea
         const textarea = document.getElementById('chat-input');
@@ -586,6 +770,10 @@ HTML_TEMPLATE = '''
                     // Add AI response with memory context if available
                     if (data.memory_context && data.memory_context.length > 0) {
                         addMessageWithMemoriesInjected(data.response, 'assistant', data.memory_context);
+                        
+                        // Animate memory activation in the network
+                        const activatedMemoryIds = data.memory_context.map(ctx => ctx.memory.id);
+                        animateMemoryActivation(activatedMemoryIds);
                     } else {
                         addMessage(data.response, 'assistant');
                     }
@@ -735,17 +923,22 @@ HTML_TEMPLATE = '''
                     // Show extracted memories
                     if (data.extracted_memories && data.extracted_memories.length > 0) {
                         const memoriesText = data.extracted_memories.join('\\n• ');
-                        addMessage(`🧠 Conversation ended! Extracted ${data.count} memories:\\n\\n• ${memoriesText}\\n\\nThese will inform future conversations.`, 'assistant');
+                        addMessage(`🧠 ${data.message || 'Conversation ended successfully!'}\\n\\n• ${memoriesText}\\n\\nThese will inform future conversations.`, 'assistant');
                     } else {
                         addMessage('🧠 Conversation ended! No new memories were extracted from this conversation.', 'assistant');
                     }
+                    
+                    // Refresh the memory network to show new memories
+                    setTimeout(() => {
+                        loadMemoryNetwork();
+                    }, 1000);
                     
                     // Start a new thread
                     setTimeout(() => {
                         newThread();
                     }, 2000);
                 } else {
-                    addMessage('❌ Failed to end conversation and extract memories.', 'assistant');
+                    addMessage(`❌ ${data.error || 'Failed to end conversation and extract memories.'}`, 'assistant');
                 }
             } catch (error) {
                 addMessage('❌ Error ending conversation. Please try again.', 'assistant');
@@ -764,6 +957,280 @@ HTML_TEMPLATE = '''
             }
         }
 
+        // Memory Network Functions
+        function initializeMemoryNetwork() {
+            const container = document.getElementById('memory-network');
+            const options = {
+                nodes: {
+                    shape: 'dot',
+                    scaling: {
+                        min: 10,
+                        max: 30
+                    },
+                    font: {
+                        size: 12,
+                        color: '#e5e7eb'
+                    },
+                    borderWidth: 2,
+                    shadow: true
+                },
+                edges: {
+                    width: 0.15,
+                    color: { 
+                        color: 'rgba(168,85,247,0.3)',
+                        highlight: 'rgba(168,85,247,0.8)',
+                        hover: 'rgba(168,85,247,0.6)'
+                    },
+                    smooth: {
+                        type: 'continuous'
+                    },
+                    shadow: true
+                },
+                physics: {
+                    enabled: true,
+                    barnesHut: {
+                        gravitationalConstant: -2000,
+                        centralGravity: 0.3,
+                        springLength: 95,
+                        springConstant: 0.04,
+                        damping: 0.09,
+                        avoidOverlap: 0.1
+                    },
+                    maxVelocity: 146,
+                    minVelocity: 0.1,
+                    solver: 'barnesHut',
+                    stabilization: {
+                        enabled: true,
+                        iterations: 1000,
+                        updateInterval: 25
+                    }
+                },
+                interaction: {
+                    tooltipDelay: 200,
+                    hideEdgesOnDrag: false,
+                    hideNodesOnDrag: false
+                }
+            };
+            
+            memoryNetwork = new vis.Network(container, networkData, options);
+            
+            // Add hover tooltips
+            memoryNetwork.on('hoverNode', function(event) {
+                const nodeId = event.node;
+                const node = networkData.nodes.find(n => n.id === nodeId);
+                if (node) {
+                    memoryNetwork.setOptions({
+                        nodes: {
+                            chosen: {
+                                node: function(values, id, selected, hovering) {
+                                    if (hovering) {
+                                        values.shadow = true;
+                                        values.shadowSize = 10;
+                                    }
+                                }
+                            }
+                        }
+                    });
+                }
+            });
+            
+            console.log('🧠 Memory network initialized');
+        }
+
+        async function loadMemoryNetwork() {
+            try {
+                const threshold = parseFloat(document.getElementById('threshold-slider').value);
+                const response = await fetch(`/memory-network?threshold=${threshold}`);
+                const data = await response.json();
+                
+                // Update network data
+                networkData.nodes = data.nodes.map(node => ({
+                    id: node.id,
+                    label: node.label.length > 30 ? node.label.substring(0, 30) + '...' : node.label,
+                    title: node.label, // Full text for tooltip
+                    size: Math.max(15, Math.min(40, 15 + node.score * 0.3)),
+                    color: {
+                        background: `rgba(168,85,247,${Math.max(0.3, Math.min(1, node.score / 100))})`,
+                        border: 'rgba(168,85,247,0.8)',
+                        highlight: {
+                            background: 'rgba(168,85,247,0.9)',
+                            border: 'rgba(168,85,247,1)'
+                        }
+                    },
+                    score: node.score,
+                    tags: node.tags || [],
+                    created: node.created || ''
+                }));
+                
+                networkData.edges = data.edges.map(edge => ({
+                    from: edge.from,
+                    to: edge.to,
+                    value: edge.value,
+                    width: Math.max(1, edge.value * 3),
+                    color: {
+                        color: `rgba(168,85,247,${Math.max(0.2, edge.value * 0.8)})`,
+                        highlight: 'rgba(168,85,247,1)',
+                        hover: 'rgba(168,85,247,0.8)'
+                    },
+                    title: `Similarity: ${edge.value.toFixed(3)}`
+                }));
+                
+                // Update network
+                if (memoryNetwork) {
+                    memoryNetwork.setData(networkData);
+                }
+                
+                // Update stats
+                document.getElementById('memory-count').textContent = data.nodes.length;
+                document.getElementById('connection-count').textContent = data.edges.length;
+                document.getElementById('active-memories').textContent = activeMemories.size;
+                
+                console.log(`🧠 Loaded ${data.nodes.length} memories, ${data.edges.length} connections`);
+                
+            } catch (error) {
+                console.error('Error loading memory network:', error);
+            }
+        }
+
+        function animateMemoryActivation(activatedMemoryIds) {
+            if (!memoryNetwork || !activatedMemoryIds.length) return;
+            
+            console.log('🔥 Animating memory activation:', activatedMemoryIds);
+            
+            // Show activity indicator
+            const indicator = document.getElementById('activity-indicator');
+            indicator.classList.add('active');
+            setTimeout(() => indicator.classList.remove('active'), 2000);
+            
+            // Update last search
+            document.getElementById('last-search').textContent = new Date().toLocaleTimeString();
+            
+            // Clear previous animation
+            if (animationTimeout) {
+                clearTimeout(animationTimeout);
+            }
+            
+            // Reset all nodes to normal
+            const updatedNodes = networkData.nodes.map(node => ({
+                ...node,
+                color: {
+                    background: `rgba(168,85,247,${Math.max(0.3, Math.min(1, node.score / 100))})`,
+                    border: 'rgba(168,85,247,0.8)'
+                },
+                borderWidth: 2
+            }));
+            
+            // Highlight activated nodes
+            const activatedNodes = new Set(activatedMemoryIds);
+            updatedNodes.forEach(node => {
+                if (activatedNodes.has(node.id)) {
+                    node.color = {
+                        background: 'rgba(255,215,0,0.9)', // Gold for activated
+                        border: 'rgba(255,215,0,1)'
+                    };
+                    node.borderWidth = 4;
+                }
+            });
+            
+            // Update nodes
+            memoryNetwork.setData({
+                nodes: updatedNodes,
+                edges: networkData.edges
+            });
+            
+            // Animate synaptic propagation
+            setTimeout(() => animateSynapticPropagation(activatedMemoryIds), 500);
+            
+            // Update active memories count
+            activeMemories = new Set(activatedMemoryIds);
+            document.getElementById('active-memories').textContent = activeMemories.size;
+            
+            // Reset animation after delay
+            animationTimeout = setTimeout(() => {
+                memoryNetwork.setData(networkData);
+                activeMemories.clear();
+                document.getElementById('active-memories').textContent = '0';
+            }, 3000);
+        }
+
+        function animateSynapticPropagation(startNodeIds) {
+            if (!memoryNetwork || !startNodeIds.length) return;
+            
+            const connectedNodes = new Set();
+            const secondDegreeNodes = new Set();
+            
+            // Find connected nodes (first degree)
+            networkData.edges.forEach(edge => {
+                if (startNodeIds.includes(edge.from)) {
+                    connectedNodes.add(edge.to);
+                } else if (startNodeIds.includes(edge.to)) {
+                    connectedNodes.add(edge.from);
+                }
+            });
+            
+            // Find second degree connections
+            networkData.edges.forEach(edge => {
+                if (connectedNodes.has(edge.from) && !startNodeIds.includes(edge.to)) {
+                    secondDegreeNodes.add(edge.to);
+                } else if (connectedNodes.has(edge.to) && !startNodeIds.includes(edge.from)) {
+                    secondDegreeNodes.add(edge.from);
+                }
+            });
+            
+            // Animate first degree connections
+            setTimeout(() => {
+                const propagatedNodes = networkData.nodes.map(node => {
+                    if (connectedNodes.has(node.id)) {
+                        return {
+                            ...node,
+                            color: {
+                                background: 'rgba(34,197,94,0.8)', // Green for propagated
+                                border: 'rgba(34,197,94,1)'
+                            },
+                            borderWidth: 3
+                        };
+                    }
+                    return node;
+                });
+                
+                memoryNetwork.setData({
+                    nodes: propagatedNodes,
+                    edges: networkData.edges
+                });
+            }, 300);
+            
+            // Animate second degree connections
+            setTimeout(() => {
+                const secondDegreeUpdated = networkData.nodes.map(node => {
+                    if (secondDegreeNodes.has(node.id)) {
+                        return {
+                            ...node,
+                            color: {
+                                background: 'rgba(59,130,246,0.7)', // Blue for second degree
+                                border: 'rgba(59,130,246,0.9)'
+                            },
+                            borderWidth: 2
+                        };
+                    }
+                    return node;
+                });
+                
+                memoryNetwork.setData({
+                    nodes: secondDegreeUpdated,
+                    edges: networkData.edges
+                });
+            }, 800);
+            
+            console.log(`🔗 Propagated to ${connectedNodes.size} first-degree, ${secondDegreeNodes.size} second-degree nodes`);
+        }
+
+        // Threshold slider handler
+        document.getElementById('threshold-slider').addEventListener('input', function(e) {
+            const value = parseFloat(e.target.value);
+            document.getElementById('threshold-value').textContent = value;
+            loadMemoryNetwork(); // Reload with new threshold
+        });
+
         // Form submit handler
         document.getElementById('chat-form').addEventListener('submit', function(e) {
             e.preventDefault();
@@ -772,6 +1239,15 @@ HTML_TEMPLATE = '''
 
         // Initialize
         updateThreadTitle();
+        
+        // Initialize memory network after page load
+        setTimeout(() => {
+            initializeMemoryNetwork();
+            loadMemoryNetwork();
+            
+            // Auto-refresh network every 30 seconds
+            setInterval(loadMemoryNetwork, 30000);
+        }, 1000);
         
         // Check if memory system is available
         fetch('/check_memory_availability')
@@ -796,6 +1272,57 @@ def index():
 @app.route('/check_memory_availability')
 def check_memory_availability():
     return jsonify({'available': MEMORY_AVAILABLE})
+
+@app.route('/memory-network')
+def memory_network():
+    """Get memory network data for visualization"""
+    if not MEMORY_AVAILABLE or not memory_manager:
+        return jsonify({'nodes': [], 'edges': []})
+        
+    try:
+        # Get threshold from query param, default 0.35
+        threshold = float(request.args.get('threshold', 0.35))
+        
+        # Use the comprehensive function to get connections and similarity matrix
+        result = memory_manager._calculate_all_scores_and_connections(threshold)
+        if result is None or result == (None, None):
+            return jsonify({'nodes': [], 'edges': []})
+        
+        connections, sim_matrix = result
+        all_mems = memory_manager._get_all_memories_flat()
+        nodes = []
+        edges = []
+
+        # Build nodes
+        for mem in all_mems:
+            nodes.append({
+                'id': mem['id'],
+                'label': mem['content'],
+                'score': mem.get('score', 0),
+                'created': mem.get('created', ''),
+                'tags': mem.get('tags', []),
+                'size': 20 + min(mem.get('score', 0), 100) * 0.5,
+            })
+
+        # Build edges from the connection graph
+        n = len(all_mems)
+        for i in range(n):
+            for j, sim in connections[i]:
+                if i < j:  # Avoid duplicate edges
+                    edges.append({
+                        'from': all_mems[i]['id'],
+                        'to': all_mems[j]['id'],
+                        'value': sim,
+                        'color': 'rgba(168,85,247,' + str(min(1, sim)) + ')',
+                        'width': 2 + 12 * sim,
+                        'type': 'semantic'
+                    })
+
+        return jsonify({'nodes': nodes, 'edges': edges})
+        
+    except Exception as e:
+        print(f"❌ Error in memory-network route: {e}")
+        return jsonify({'nodes': [], 'edges': []})
 
 @app.route('/send_message', methods=['POST'])
 def send_message():
@@ -860,28 +1387,68 @@ def end_thread():
             return jsonify({'success': False, 'error': 'Thread not found'})
         
         conversation = chat_threads[thread_id]
-        extracted_memories = extract_memories_from_conversation(conversation)
         
-        # Add extracted memories to the memory system
-        if MEMORY_AVAILABLE and memory_manager and extracted_memories:
+        # Extract memories with better error handling
+        try:
+            extracted_memories = extract_memories_from_conversation(conversation)
+        except Exception as e:
+            print(f"❌ Error during memory extraction: {e}")
+            extracted_memories = []
+        
+        # Add extracted memories to the memory system using both local and API approach
+        successful_adds = 0
+        if extracted_memories:
             print(f"💾 Extracting {len(extracted_memories)} memories from conversation...")
-            for memory_text in extracted_memories:
+            
+            # First try local memory manager
+            if MEMORY_AVAILABLE and memory_manager:
+                for memory_text in extracted_memories:
+                    try:
+                        memory_manager.add_memory(memory_text, ["conversation", "auto-extracted"])
+                        print(f"   ✅ Added locally: {memory_text}")
+                        successful_adds += 1
+                    except Exception as e:
+                        print(f"   ❌ Failed to add locally: {memory_text} - {e}")
+            
+            # Also try to add via API to ensure both servers are synchronized
+            try:
+                for memory_text in extracted_memories:
+                    api_response = requests.post('http://localhost:5000/memories', 
+                                               json={
+                                                   'content': memory_text, 
+                                                   'tags': ['conversation', 'auto-extracted']
+                                               }, 
+                                               timeout=5)
+                    if api_response.status_code == 201:
+                        print(f"   🔄 Synced to API: {memory_text}")
+                    else:
+                        print(f"   ⚠️ API sync failed for: {memory_text}")
+            except Exception as e:
+                print(f"   ⚠️ API synchronization failed: {e}")
+                
+            # Force local reload if we have memory manager
+            if MEMORY_AVAILABLE and memory_manager:
                 try:
-                    memory_manager.add_memory(memory_text, ["conversation", "auto-extracted"])
-                    print(f"   ✅ Added: {memory_text}")
+                    time.sleep(1)  # Give file operations time to complete
+                    memory_manager.reload_from_disk()
+                    print(f"💾 Reloaded memory manager after adding {successful_adds} memories")
                 except Exception as e:
-                    print(f"   ❌ Failed to add: {memory_text} - {e}")
+                    print(f"⚠️ Warning: Could not reload memory manager: {e}")
         
         # Clean up the thread
-        del chat_threads[thread_id]
+        if thread_id in chat_threads:
+            del chat_threads[thread_id]
         
         return jsonify({
             'success': True,
             'extracted_memories': extracted_memories,
-            'count': len(extracted_memories)
+            'count': len(extracted_memories),
+            'successful_adds': successful_adds,
+            'message': f'Successfully extracted and saved {len(extracted_memories)} memories!'
         })
         
     except Exception as e:
+        print(f"❌ Error in end_thread: {e}")
         return jsonify({'success': False, 'error': str(e)})
 
 def extract_memories_from_conversation(conversation):
@@ -920,7 +1487,8 @@ Extracted memories:"""
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": extraction_prompt}],
             max_tokens=300,
-            temperature=0.3
+            temperature=0.3,
+            timeout=30  # Add timeout to prevent hanging
         )
         
         result = response.choices[0].message.content.strip()
@@ -957,12 +1525,29 @@ def generate_openai_response_with_memory(message, conversation_history, use_memo
         memory_context = []
         debug_memories = []
         
-        # Always search memories if available
+        # Always search memories if available (try multiple sources)
         if MEMORY_AVAILABLE and memory_manager:
             try:
                 print(f"\n🔍 Searching memories for: '{message}'")
+                # Force a quick reload to ensure we have the latest memories
+                try:
+                    memory_manager.reload_from_disk()
+                except:
+                    pass  # Don't fail if reload fails
                 search_results = memory_manager.search_memories(message, top_k=5, min_relevance=0.2)
                 memory_context = search_results
+                
+                # If no results from local search, try API search as backup
+                if not search_results:
+                    try:
+                        api_response = requests.get(f'http://localhost:5000/search/{message}', timeout=5)
+                        if api_response.status_code == 200:
+                            api_results = api_response.json()
+                            if api_results:
+                                print(f"   🔄 Found {len(api_results)} memories via API fallback")
+                                memory_context = api_results[:5]  # Limit to 5
+                    except Exception as e:
+                        print(f"   ⚠️ API search fallback failed: {e}")
                 
                 print(f"📊 Found {len(search_results)} relevant memories:")
                 for i, result in enumerate(search_results):
@@ -984,10 +1569,12 @@ def generate_openai_response_with_memory(message, conversation_history, use_memo
                 memory_context = []
         else:
             print("⚠️ Memory system not available")
-        # Add conversation history
-        for msg in conversation_history[-10:]:
+        # Add conversation history (excluding the current message to avoid duplication)
+        for msg in conversation_history[:-1]:  # Exclude the last message (current user message)
             role = "user" if msg['sender'] == 'user' else "assistant"
             messages.append({"role": role, "content": msg['content']})
+        
+        # Add the current user message
         messages.append({"role": "user", "content": message})
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
@@ -1024,8 +1611,8 @@ def start_memory_file_watcher(memory_manager, path):
             import hashlib
             current_time = time.time()
             
-            # Avoid duplicate reloads within 2 seconds
-            if current_time - self.last_reload_time < 2.0:
+            # Avoid duplicate reloads within 5 seconds (increased from 2)
+            if current_time - self.last_reload_time < 5.0:
                 return
             
             try:
@@ -1036,6 +1623,9 @@ def start_memory_file_watcher(memory_manager, path):
                     # Skip if file is empty or being written
                     if current_size == 0:
                         return
+                    
+                    # Wait a bit for file write to complete
+                    time.sleep(0.2)
                     
                     # Calculate file hash to detect actual content changes
                     try:
@@ -1050,9 +1640,13 @@ def start_memory_file_watcher(memory_manager, path):
                         self.last_file_size = current_size
                     except (IOError, OSError):
                         # File might be locked, skip this reload
+                        print(f"[Watcher] 📁 File locked, skipping reload")
                         return
                 
                 print(f"[Watcher] 📁 Detected memories.json change, reloading...")
+                
+                # Add delay before reloading to let file operations complete
+                time.sleep(0.5)
                 memory_manager.reload_from_disk()
                 self.last_reload_time = current_time
                 
@@ -1068,8 +1662,13 @@ def start_memory_file_watcher(memory_manager, path):
 
 # Start the file watcher in a background thread if memory_manager is available
 if MEMORY_AVAILABLE and memory_manager:
-    mem_json_path = os.path.join(os.path.dirname(__file__), 'memory-app', 'backend', 'data', 'memories.json')
-    threading.Thread(target=start_memory_file_watcher, args=(memory_manager, mem_json_path), daemon=True).start()
+    try:
+        mem_json_path = os.path.join(os.path.dirname(__file__), 'memory-app', 'backend', 'data', 'memories.json')
+        watcher_thread = threading.Thread(target=start_memory_file_watcher, args=(memory_manager, mem_json_path), daemon=True)
+        watcher_thread.start()
+        print("🔄 Memory file watcher started successfully")
+    except Exception as e:
+        print(f"⚠️ Warning: Could not start memory file watcher: {e}")
 
 if __name__ == '__main__':
     print("🤖 Starting ChatGPT Clone with OpenAI API and Memory Search...")
