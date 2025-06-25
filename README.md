@@ -1,6 +1,4 @@
-# Moneta - Intelligent Memory System with ChatGPT Integration
-
-A sophisticated memory management system that learns from conversations and provides intelligent memory search with dynamic reinforcement learning.
+# Moneta - Bringing Elegance to AI
 
 ## 🚀 Features
 
