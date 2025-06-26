@@ -1,9 +1,43 @@
 {
   "memories": [
     {
+      "id": "mem_61b9d163-adde-4f86-a408-d686adb35fe0",
+      "content": "I love Italian food and pizza.",
+      "score": 12.56,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-25"
+    },
+    {
+      "id": "mem_7cefe969-9d9f-4fde-b8e1-1194d721aa0f",
+      "content": "I love Italian food and pizza.",
+      "score": 12.56,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-25"
+    },
+    {
+      "id": "mem_51cbbd0f-00f6-44a6-95a0-cbc7c21c295f",
+      "content": "I love Italian Food",
+      "score": 10.61,
+      "tags": [],
+      "created": "2025-06-24"
+    },
+    {
+      "id": "mem_6036ca7a-a8b3-4159-bfe2-da6088decc21",
+      "content": "I love pizza",
+      "score": 8.66,
+      "tags": [],
+      "created": "2025-06-24"
+    },
+    {
       "id": "mem_5c771ecc-7520-462e-8a4f-a895678fdf62",
       "content": "I am very smart",
-      "score": 3.08,
+      "score": 3.09,
       "tags": [],
       "created": "2025-06-24"
     },
@@ -22,115 +56,16 @@
       "created": "2025-06-25"
     },
     {
-      "id": "mem_6036ca7a-a8b3-4159-bfe2-da6088decc21",
-      "content": "I love pizza",
-      "score": 6.37,
-      "tags": [],
-      "created": "2025-06-24"
-    },
-    {
-      "id": "mem_51cbbd0f-00f6-44a6-95a0-cbc7c21c295f",
-      "content": "I love Italian Food",
-      "score": 7.24,
-      "tags": [],
-      "created": "2025-06-24"
-    },
-    {
-      "id": "mem_5c301e11-f0ee-47eb-be6d-d1a1e20e3837",
-      "content": "I have an IQ (intelligence quotient) of 145",
-      "score": 1.11,
-      "tags": [],
-      "created": "2025-06-24"
-    },
-    {
-      "id": "mem_928c455f-cb13-421b-96b4-3a1653df2cfa",
-      "content": "I love studying mathematics and computer science and am a bit of a nerd for algorithms",
-      "score": 0.69,
-      "tags": [],
-      "created": "2025-06-25"
-    },
-    {
-      "id": "mem_d1b08644-b6c7-4cae-8417-1186e9d33f34",
-      "content": "I enjoy intellectual activities",
-      "score": 0.49,
-      "tags": [],
-      "created": "2025-06-25"
-    },
-    {
-      "id": "mem_b18a13f5-d313-4de1-8fd2-913d7e921b38",
-      "content": "Worker 3 memory 3: Test memory from concurrent worker",
-      "score": 0.1,
-      "tags": [
-        "test",
-        "worker3"
-      ],
-      "created": "2025-06-24"
-    },
-    {
-      "id": "mem_0f5e33aa-5f80-4579-a63b-cc0afb77a9d7",
-      "content": "I have mixed feelings about keelia",
-      "score": 0.1,
-      "tags": [],
-      "created": "2025-06-24"
-    },
-    {
       "id": "mem_ced2c12c-8068-44c2-bf21-a9f0027f0bc3",
       "content": "I enjoy playing fortnite in the summer",
-      "score": 0.56,
+      "score": 3.49,
       "tags": [],
       "created": "2025-06-24"
     },
     {
       "id": "mem_5f26ad35-410b-42ca-9cf1-7160de1658bf",
       "content": "I love cars like Lamborghinis.",
-      "score": 0.1,
-      "tags": [
-        "conversation",
-        "auto-extracted"
-      ],
-      "created": "2025-06-25"
-    },
-    {
-      "id": "mem_0fa5607a-e851-480e-ba7e-d50e162323e1",
-      "content": "I hate Jaden",
-      "score": 0.0,
-      "tags": [],
-      "created": "2025-06-24"
-    },
-    {
-      "id": "mem_31752182-d224-4c5b-b675-4f9171516545",
-      "content": "I love lemonade.",
-      "score": 0.0,
-      "tags": [
-        "conversation",
-        "auto-extracted"
-      ],
-      "created": "2025-06-24"
-    },
-    {
-      "id": "mem_61b9d163-adde-4f86-a408-d686adb35fe0",
-      "content": "I love Italian food and pizza.",
-      "score": 8.52,
-      "tags": [
-        "conversation",
-        "auto-extracted"
-      ],
-      "created": "2025-06-25"
-    },
-    {
-      "id": "mem_c8c9349a-ab03-41fb-a6a8-afb0bf4ffb56",
-      "content": "I love sunshine.",
-      "score": 0.0,
-      "tags": [
-        "conversation",
-        "auto-extracted"
-      ],
-      "created": "2025-06-25"
-    },
-    {
-      "id": "mem_7cefe969-9d9f-4fde-b8e1-1194d721aa0f",
-      "content": "I love Italian food and pizza.",
-      "score": 8.52,
+      "score": 4.94,
       "tags": [
         "conversation",
         "auto-extracted"
@@ -140,12 +75,119 @@
     {
       "id": "mem_1e6d9647-b47f-461c-8496-de65a23252af",
       "content": "I really enjoy playing tennis, especially at night.",
-      "score": 0.56,
+      "score": 1.03,
       "tags": [
         "conversation",
         "auto-extracted"
       ],
       "created": "2025-06-25"
+    },
+    {
+      "id": "mem_d1b08644-b6c7-4cae-8417-1186e9d33f34",
+      "content": "I enjoy intellectual activities",
+      "score": 0.45,
+      "tags": [],
+      "created": "2025-06-25"
+    },
+    {
+      "id": "mem_31752182-d224-4c5b-b675-4f9171516545",
+      "content": "I love lemonade.",
+      "score": 3.0,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-24"
+    },
+    {
+      "id": "mem_c8c9349a-ab03-41fb-a6a8-afb0bf4ffb56",
+      "content": "I love sunshine.",
+      "score": 2.13,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-25"
+    },
+    {
+      "id": "mem_561b4d1a-3f12-4e51-82c9-8e20348b9df5",
+      "content": "I enjoy Italian food, especially pizza.",
+      "score": 12.2,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-25"
+    },
+    {
+      "id": "mem_feb92685-df5a-4d69-893c-bd9a134c85ef",
+      "content": "I enjoy driving luxury cars like Lamborghinis.",
+      "score": 6.81,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-25"
+    },
+    {
+      "id": "mem_81dfe066-f51c-42ac-b4c8-34059c1a0253",
+      "content": "I really like Ferraris.",
+      "score": 6.97,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-25"
+    },
+    {
+      "id": "mem_90d1cf3f-4989-4a2b-9281-b84a26bb01af",
+      "content": "I really like playing Fortnite in the summer.",
+      "score": 3.49,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-25"
+    },
+    {
+      "id": "mem_7162b78c-500a-41e8-bd27-3dfe8e3f05c0",
+      "content": "I love lemonade.",
+      "score": 3.0,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-25"
+    },
+    {
+      "id": "mem_af5a5dc5-90bc-4f04-9e30-db09626ee103",
+      "content": "I my iq is nearing the 4 figures :)",
+      "score": 1.11,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-25"
+    },
+    {
+      "id": "mem_73bf28e1-b6cf-47a6-86e0-be78a744c9a9",
+      "content": "I really enjoy Ed Sheeran.",
+      "score": 0.1,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-25"
+    },
+    {
+      "id": "mem_7d475d42-440f-4a72-8e2c-ca1a7bdf8891",
+      "content": "I really like the sun",
+      "score": 2.23,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-26"
     }
   ]
 }

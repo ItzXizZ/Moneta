@@ -45,6 +45,11 @@ client = OpenAI(api_key=api_key)
 # In-memory storage for chat threads and messages
 chat_threads = {}
 
+# Track processed request IDs to prevent duplicates
+processed_requests = set()
+import time
+last_cleanup = time.time()
+
 # HTML template with embedded CSS
 HTML_TEMPLATE = '''
 <!DOCTYPE html>
@@ -523,11 +528,29 @@ HTML_TEMPLATE = '''
             flex: 1;
             border: 1px solid var(--glass-border);
             border-radius: 12px;
-            background: rgba(17, 24, 39, 0.9);
+            background: radial-gradient(ellipse at center, rgba(10, 10, 10, 0.98) 0%, rgba(17, 24, 39, 0.95) 60%, rgba(5, 5, 5, 0.99) 100%);
             backdrop-filter: var(--glass-blur);
             position: relative;
             overflow: hidden;
             min-height: 300px;
+            box-shadow: 
+                inset 0 0 50px rgba(168, 85, 247, 0.1),
+                0 0 30px rgba(168, 85, 247, 0.15);
+        }
+
+        #memory-network::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: 
+                radial-gradient(circle at 20% 20%, rgba(255, 215, 0, 0.02) 0%, transparent 50%),
+                radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.03) 0%, transparent 50%),
+                radial-gradient(circle at 40% 70%, rgba(255, 215, 0, 0.01) 0%, transparent 30%);
+            pointer-events: none;
+            z-index: 1;
         }
 
         .network-loading {
@@ -543,17 +566,33 @@ HTML_TEMPLATE = '''
             position: absolute;
             top: 10px;
             right: 10px;
-            background: var(--primary-600);
-            color: white;
-            padding: 5px 10px;
-            border-radius: 8px;
-            font-size: 0.8rem;
+            background: linear-gradient(45deg, #ffd700, #ffed4e);
+            color: #000;
+            padding: 8px 12px;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: all 0.4s ease;
+            border: 2px solid rgba(255, 215, 0, 0.6);
+            box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+            z-index: 10;
         }
 
         .memory-activity-indicator.active {
             opacity: 1;
+            animation: neuralPulse 1.5s ease-in-out infinite;
+        }
+
+        @keyframes neuralPulse {
+            0%, 100% { 
+                transform: scale(1); 
+                box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+            }
+            50% { 
+                transform: scale(1.05); 
+                box-shadow: 0 0 25px rgba(255, 215, 0, 0.8);
+            }
         }
 
         @media (max-width: 1024px) {
@@ -639,7 +678,7 @@ HTML_TEMPLATE = '''
                 </div>
                 
                 <div class="chat-input-container">
-                    <form class="chat-input-form" id="chat-form">
+                    <div class="chat-input-form" id="chat-form">
                         <textarea 
                             class="chat-input" 
                             id="chat-input" 
@@ -647,8 +686,8 @@ HTML_TEMPLATE = '''
                             rows="1"
                             onkeydown="handleKeyDown(event)"
                         ></textarea>
-                        <button type="submit" class="send-button">Send</button>
-                    </form>
+                        <button type="button" class="send-button" onclick="console.log('🔥 BUTTON CLICKED - calling sendMessage()'); sendMessage()">Send</button>
+                    </div>
                 </div>
             </div>
             
@@ -690,6 +729,7 @@ HTML_TEMPLATE = '''
         let currentThreadId = null;
         let isTyping = false;
         let memorySearchEnabled = false;
+        let sendingMessage = false; // Additional flag to prevent duplicates
         
         // Memory Network Variables
         let memoryNetwork = null;
@@ -708,8 +748,11 @@ HTML_TEMPLATE = '''
         // Handle Enter key (Send on Enter, new line on Shift+Enter)
         function handleKeyDown(event) {
             if (event.key === 'Enter' && !event.shiftKey) {
+                console.log('🔥 ENTER KEY PRESSED - calling sendMessage()');
                 event.preventDefault();
+                event.stopPropagation();
                 sendMessage();
+                return false;
             }
         }
 
@@ -732,23 +775,51 @@ HTML_TEMPLATE = '''
 
         // Send message function
         async function sendMessage() {
+            console.log('🔥 === SENDMESSAGE FUNCTION CALLED ===');
+            console.log('🔥 Call stack:', new Error().stack);
+            
             const input = document.getElementById('chat-input');
+            const sendButton = document.querySelector('.send-button');
             const message = input.value.trim();
             
-            if (!message || isTyping) return;
+            console.log('🔥 Current state - message:', !!message, 'isTyping:', isTyping, 'sendingMessage:', sendingMessage);
+            
+            if (!message || isTyping || sendingMessage) {
+                console.log('🔥 ❌ sendMessage BLOCKED - message:', !!message, 'isTyping:', isTyping, 'sendingMessage:', sendingMessage);
+                return;
+            }
+            
+            // Set both flags immediately to prevent duplicate calls
+            isTyping = true;
+            sendingMessage = true;
+            
+            // Disable input and button completely
+            input.disabled = true;
+            sendButton.disabled = true;
+            sendButton.style.opacity = '0.5';
+            sendButton.style.cursor = 'not-allowed';
+            
+            console.log('🔥 ✅ sendMessage PROCEEDING - UI disabled, flags set');
+            
+            // Generate unique request ID
+            const requestId = 'req_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9);
+            console.log('🔥 📝 Request ID generated:', requestId);
             
             // Clear input
             input.value = '';
             input.style.height = 'auto';
             
             // Add user message to chat
+            console.log('🔥 📤 Adding user message to chat');
             addMessage(message, 'user');
             
             // Show typing indicator
+            console.log('🔥 ⏳ Showing typing indicator');
             showTypingIndicator();
             showSearchingMemories();
             
             try {
+                console.log('🔥 🌐 Making fetch request to /send_message');
                 const response = await fetch('/send_message', {
                     method: 'POST',
                     headers: {
@@ -757,39 +828,65 @@ HTML_TEMPLATE = '''
                     body: JSON.stringify({
                         message: message,
                         thread_id: currentThreadId,
-                        use_memory_search: memorySearchEnabled
+                        use_memory_search: memorySearchEnabled,
+                        request_id: requestId
                     })
                 });
                 
+                console.log('🔥 📨 Response received - Status:', response.status);
                 const data = await response.json();
+                console.log('🔥 📋 Response data:', data);
                 
                 if (data.success) {
+                    console.log('🔥 ✅ SUCCESS - Processing successful response');
                     currentThreadId = data.thread_id;
                     updateThreadTitle();
                     
                     // Add AI response with memory context if available
                     if (data.memory_context && data.memory_context.length > 0) {
+                        console.log('🔥 🧠 Adding response with memory context');
                         addMessageWithMemoriesInjected(data.response, 'assistant', data.memory_context);
                         
                         // Animate memory activation in the network
                         const activatedMemoryIds = data.memory_context.map(ctx => ctx.memory.id);
                         animateMemoryActivation(activatedMemoryIds);
                     } else {
+                        console.log('🔥 💬 Adding simple response');
                         addMessage(data.response, 'assistant');
                     }
+                } else if (response.status === 409) {
+                    // Duplicate request - silently ignore
+                    console.log('🔥 🔕 Duplicate request blocked by server - IGNORING');
                 } else {
+                    console.log('🔥 ❌ ERROR - Adding error message');
                     addMessageWithMemoriesInjected('Sorry, I encountered an error. Please try again.', 'assistant', []);
                 }
             } catch (error) {
+                console.log('🔥 💥 CATCH BLOCK - Network error:', error);
                 addMessageWithMemoriesInjected('Sorry, I encountered an error. Please try again.', 'assistant', []);
             } finally {
+                console.log('🔥 🧹 FINALLY BLOCK - Cleaning up');
                 hideTypingIndicator();
                 hideSearchingMemories();
+                
+                // Re-enable input and button
+                input.disabled = false;
+                sendButton.disabled = false;
+                sendButton.style.opacity = '1';
+                sendButton.style.cursor = 'pointer';
+                
+                // Reset the flags
+                isTyping = false;
+                sendingMessage = false;
+                
+                console.log('🔥 ✅ UI re-enabled, flags reset - SENDMESSAGE COMPLETE');
+                console.log('🔥 === END SENDMESSAGE ===');
             }
         }
 
         // Add message to chat
         function addMessage(content, sender) {
+            console.log('🔥 💬 addMessage called - sender:', sender, 'content:', content.substring(0, 50) + '...');
             const messagesContainer = document.getElementById('chat-messages');
             const emptyState = messagesContainer.querySelector('.empty-state');
             
@@ -810,10 +907,12 @@ HTML_TEMPLATE = '''
             
             messagesContainer.appendChild(messageDiv);
             messagesContainer.scrollTop = messagesContainer.scrollHeight;
+            console.log('🔥 ✅ Message added to DOM');
         }
 
         // Add message with memories injected info
         function addMessageWithMemoriesInjected(content, sender, memoryContext) {
+            console.log('🔥 🧠 addMessageWithMemoriesInjected called - sender:', sender, 'content:', content.substring(0, 50) + '...', 'memories:', memoryContext?.length || 0);
             const messagesContainer = document.getElementById('chat-messages');
             const emptyState = messagesContainer.querySelector('.empty-state');
             
@@ -851,7 +950,6 @@ HTML_TEMPLATE = '''
 
         // Show typing indicator
         function showTypingIndicator() {
-            isTyping = true;
             const indicator = document.getElementById('typing-indicator');
             indicator.classList.add('show');
             indicator.scrollIntoView({ behavior: 'smooth' });
@@ -895,17 +993,25 @@ HTML_TEMPLATE = '''
 
         // End thread and extract memories
         async function endThread() {
+            console.log('🔥 === ENDTHREAD FUNCTION CALLED ===');
+            console.log('🔥 Current thread ID:', currentThreadId);
+            
             if (!currentThreadId) {
                 alert('No active conversation to end.');
                 return;
             }
 
             if (!confirm('End this conversation and extract memories for future chats?')) {
+                console.log('🔥 User cancelled thread ending');
                 return;
             }
 
+            console.log('🔥 Starting thread ending process...');
+            
             try {
                 showTypingIndicator();
+                
+                console.log('🔥 Making /end_thread request for thread:', currentThreadId);
                 
                 const response = await fetch('/end_thread', {
                     method: 'POST',
@@ -917,9 +1023,18 @@ HTML_TEMPLATE = '''
                     })
                 });
 
+                console.log('🔥 End thread response status:', response.status);
                 const data = await response.json();
+                console.log('🔥 End thread response data:', data);
 
                 if (data.success) {
+                    console.log('🔥 ✅ End thread SUCCESS - extracted', data.extracted_memories?.length || 0, 'memories');
+                    
+                    // Clear current thread immediately to prevent race conditions
+                    const oldThreadId = currentThreadId;
+                    currentThreadId = null;
+                    console.log('🔥 Cleared thread ID from', oldThreadId, 'to', currentThreadId);
+                    
                     // Show extracted memories
                     if (data.extracted_memories && data.extracted_memories.length > 0) {
                         const memoriesText = data.extracted_memories.join('\\n• ');
@@ -930,20 +1045,29 @@ HTML_TEMPLATE = '''
                     
                     // Refresh the memory network to show new memories
                     setTimeout(() => {
+                        console.log('🔥 Refreshing memory network...');
                         loadMemoryNetwork();
                     }, 1000);
                     
-                    // Start a new thread
+                    // Start a new thread immediately (no delay to prevent race conditions)
                     setTimeout(() => {
-                        newThread();
-                    }, 2000);
+                        console.log('🔥 Starting new conversation...');
+                        const messagesContainer = document.getElementById('chat-messages');
+                        messagesContainer.innerHTML = '<div class="empty-state">Start a new conversation by typing a message below...</div>';
+                        updateThreadTitle();
+                        console.log('🔥 New conversation ready');
+                    }, 2500); // Wait a bit longer to let user read the success message
                 } else {
+                    console.log('🔥 ❌ End thread FAILED:', data.error);
                     addMessage(`❌ ${data.error || 'Failed to end conversation and extract memories.'}`, 'assistant');
                 }
             } catch (error) {
+                console.log('🔥 💥 CATCH BLOCK in endThread:', error);
                 addMessage('❌ Error ending conversation. Please try again.', 'assistant');
             } finally {
+                console.log('🔥 🧹 FINALLY BLOCK in endThread');
                 hideTypingIndicator();
+                console.log('🔥 === END ENDTHREAD ===');
             }
         }
 
@@ -964,46 +1088,78 @@ HTML_TEMPLATE = '''
                 nodes: {
                     shape: 'dot',
                     scaling: {
-                        min: 10,
-                        max: 30
+                        min: 15,
+                        max: 45
                     },
                     font: {
-                        size: 12,
-                        color: '#e5e7eb'
+                        size: 13,
+                        color: '#f3f4f6',
+                        face: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
+                        strokeWidth: 2,
+                        strokeColor: '#000000'
                     },
-                    borderWidth: 2,
-                    shadow: true
+                    borderWidth: 3,
+                    shadow: {
+                        enabled: true,
+                        color: 'rgba(168,85,247,0.4)',
+                        size: 12,
+                        x: 0,
+                        y: 0
+                    },
+                    margin: {
+                        top: 8,
+                        right: 8,
+                        bottom: 8,
+                        left: 8
+                    }
                 },
                 edges: {
-                    width: 0.15,
+                    width: 1,
                     color: { 
-                        color: 'rgba(168,85,247,0.3)',
-                        highlight: 'rgba(168,85,247,0.8)',
-                        hover: 'rgba(168,85,247,0.6)'
+                        color: 'rgba(168,85,247,0.25)',
+                        highlight: 'rgba(255,215,0,0.9)',
+                        hover: 'rgba(255,215,0,0.7)'
                     },
                     smooth: {
-                        type: 'continuous'
+                        type: 'curvedCW',
+                        roundness: 0.25,
+                        forceDirection: 'none'
                     },
-                    shadow: true
+                    shadow: {
+                        enabled: true,
+                        color: 'rgba(168,85,247,0.2)',
+                        size: 8,
+                        x: 0,
+                        y: 0
+                    },
+                    length: 200,
+                    scaling: {
+                        min: 1,
+                        max: 8
+                    }
                 },
                 physics: {
                     enabled: true,
                     barnesHut: {
-                        gravitationalConstant: -2000,
-                        centralGravity: 0.3,
-                        springLength: 95,
-                        springConstant: 0.04,
-                        damping: 0.09,
-                        avoidOverlap: 0.1
+                        gravitationalConstant: -1200,
+                        centralGravity: 0.15,
+                        springLength: 150, // Longer paths for better signal visibility
+                        springConstant: 0.02,
+                        damping: 0.12,
+                        avoidOverlap: 0.2
                     },
-                    maxVelocity: 146,
+                    maxVelocity: 100,
                     minVelocity: 0.1,
                     solver: 'barnesHut',
                     stabilization: {
                         enabled: true,
-                        iterations: 1000,
-                        updateInterval: 25
-                    }
+                        iterations: 1500,
+                        updateInterval: 35,
+                        fit: true
+                    },
+                    // Add this to prevent movement during animation
+                    adaptiveTimestep: false,
+                    timestep: 0.3
                 },
                 interaction: {
                     tooltipDelay: 200,
@@ -1099,129 +1255,400 @@ HTML_TEMPLATE = '''
             
             // Show activity indicator
             const indicator = document.getElementById('activity-indicator');
-            indicator.classList.add('active');
-            setTimeout(() => indicator.classList.remove('active'), 2000);
-            
-            // Update last search
-            document.getElementById('last-search').textContent = new Date().toLocaleTimeString();
-            
-            // Clear previous animation
-            if (animationTimeout) {
-                clearTimeout(animationTimeout);
+            if (indicator) {
+                indicator.classList.add('active');
+                setTimeout(() => {
+                    if (indicator) {
+                        indicator.classList.remove('active');
+                    }
+                }, 4000);
             }
             
-            // Reset all nodes to normal
-            const updatedNodes = networkData.nodes.map(node => ({
-                ...node,
-                color: {
-                    background: `rgba(168,85,247,${Math.max(0.3, Math.min(1, node.score / 100))})`,
-                    border: 'rgba(168,85,247,0.8)'
-                },
-                borderWidth: 2
-            }));
+            // Update last search time
+            const lastSearchElement = document.getElementById('last-search');
+            if (lastSearchElement) {
+                lastSearchElement.textContent = new Date().toLocaleTimeString();
+            }
             
-            // Highlight activated nodes
-            const activatedNodes = new Set(activatedMemoryIds);
-            updatedNodes.forEach(node => {
-                if (activatedNodes.has(node.id)) {
-                    node.color = {
-                        background: 'rgba(255,215,0,0.9)', // Gold for activated
-                        border: 'rgba(255,215,0,1)'
-                    };
-                    node.borderWidth = 4;
-                }
-            });
-            
-            // Update nodes
-            memoryNetwork.setData({
-                nodes: updatedNodes,
-                edges: networkData.edges
-            });
-            
-            // Animate synaptic propagation
-            setTimeout(() => animateSynapticPropagation(activatedMemoryIds), 500);
+            // Start the signal animation WITHOUT updating network data
+            setTimeout(() => {
+                createNeuralPropagationEffect(activatedMemoryIds);
+            }, 500);
             
             // Update active memories count
             activeMemories = new Set(activatedMemoryIds);
-            document.getElementById('active-memories').textContent = activeMemories.size;
+            const activeMemoriesElement = document.getElementById('active-memories');
+            if (activeMemoriesElement) {
+                activeMemoriesElement.textContent = activeMemories.size;
+            }
             
-            // Reset animation after delay
-            animationTimeout = setTimeout(() => {
-                memoryNetwork.setData(networkData);
+            // Clear active memories after animation completes
+            setTimeout(() => {
                 activeMemories.clear();
-                document.getElementById('active-memories').textContent = '0';
-            }, 3000);
+                const activeMemoriesElement = document.getElementById('active-memories');
+                if (activeMemoriesElement) {
+                    activeMemoriesElement.textContent = '0';
+                }
+            }, 5000);
         }
 
-        function animateSynapticPropagation(startNodeIds) {
-            if (!memoryNetwork || !startNodeIds.length) return;
-            
+        function createNeuralPropagationEffect(activatedMemoryIds) {
+            // Find connected nodes for propagation
             const connectedNodes = new Set();
-            const secondDegreeNodes = new Set();
+            const activatedSet = new Set(activatedMemoryIds);
             
-            // Find connected nodes (first degree)
             networkData.edges.forEach(edge => {
-                if (startNodeIds.includes(edge.from)) {
+                if (activatedSet.has(edge.from)) {
                     connectedNodes.add(edge.to);
-                } else if (startNodeIds.includes(edge.to)) {
+                } else if (activatedSet.has(edge.to)) {
                     connectedNodes.add(edge.from);
                 }
             });
             
-            // Find second degree connections
+            // Start the beautiful signal trail animation
+            if (connectedNodes.size > 0) {
+                createAdvancedSignalTrails(activatedMemoryIds, Array.from(connectedNodes));
+            }
+            
+            // Create secondary propagation wave
+            setTimeout(() => {
+                const secondaryConnected = new Set();
             networkData.edges.forEach(edge => {
-                if (connectedNodes.has(edge.from) && !startNodeIds.includes(edge.to)) {
-                    secondDegreeNodes.add(edge.to);
-                } else if (connectedNodes.has(edge.to) && !startNodeIds.includes(edge.from)) {
-                    secondDegreeNodes.add(edge.from);
+                    if (connectedNodes.has(edge.from) && !activatedSet.has(edge.to)) {
+                        secondaryConnected.add(edge.to);
+                    } else if (connectedNodes.has(edge.to) && !activatedSet.has(edge.from)) {
+                        secondaryConnected.add(edge.from);
+                    }
+                });
+                
+                if (secondaryConnected.size > 0) {
+                    createAdvancedSignalTrails(Array.from(connectedNodes), Array.from(secondaryConnected));
                 }
+            }, 1000);
+        }
+
+
+
+        // Advanced Signal Trail System for Neural-like Visualization
+        let signalTrails = [];
+        let sparkleSystem = [];
+        let trailAnimationActive = false;
+
+        function createAdvancedSignalTrails(startNodeIds, connectedNodeIds) {
+            if (!memoryNetwork) return;
+            
+            console.log('🌟 Creating advanced signal trails from:', startNodeIds, 'to:', connectedNodeIds);
+            
+            // Get node positions (this won't change them, just reads current positions)
+            const nodePositions = memoryNetwork.getPositions();
+            
+            // Clear existing trails to prevent overlap
+            signalTrails = [];
+            sparkleSystem = [];
+            
+            // Create signal trails for each connection
+            startNodeIds.forEach(startNodeId => {
+                connectedNodeIds.forEach(connectedNodeId => {
+                    const startPos = nodePositions[startNodeId];
+                    const endPos = nodePositions[connectedNodeId];
+                    
+                    if (startPos && endPos) {
+                        // Create multiple signal particles for this connection
+                        for (let i = 0; i < 3; i++) {
+            setTimeout(() => {
+                                createSignalTrail(startPos, endPos, startNodeId, connectedNodeId, i);
+                            }, i * 100);
+                        }
+                        
+                        // Create sparkle trail along the path
+                        setTimeout(() => {
+                            createSparkleTrail(startPos, endPos, startNodeId, connectedNodeId);
+                        }, 200);
+                    }
+                });
             });
             
-            // Animate first degree connections
-            setTimeout(() => {
-                const propagatedNodes = networkData.nodes.map(node => {
-                    if (connectedNodes.has(node.id)) {
-                        return {
-                            ...node,
-                            color: {
-                                background: 'rgba(34,197,94,0.8)', // Green for propagated
-                                border: 'rgba(34,197,94,1)'
-                            },
-                            borderWidth: 3
-                        };
+            if (!trailAnimationActive) {
+                trailAnimationActive = true;
+                animateSignalTrails();
+            }
+        }
+
+        function createSignalTrail(startPos, endPos, startNodeId, endNodeId, particleIndex) {
+            // Get the canvas container coordinates
+            const container = document.getElementById('memory-network');
+            const rect = container.getBoundingClientRect();
+            
+            // Transform vis.js coordinates to canvas coordinates
+            const canvasWidth = container.offsetWidth;
+            const canvasHeight = container.offsetHeight;
+            
+            const trail = {
+                id: `trail_${Date.now()}_${particleIndex}`,
+                startPos: { 
+                    x: startPos.x + canvasWidth / 2, 
+                    y: startPos.y + canvasHeight / 2 
+                },
+                endPos: { 
+                    x: endPos.x + canvasWidth / 2, 
+                    y: endPos.y + canvasHeight / 2 
+                },
+                progress: 0,
+                speed: 0.012 + (Math.random() * 0.008),
+                particles: [],
+                active: true,
+                startNodeId: startNodeId,
+                endNodeId: endNodeId,
+                particleIndex: particleIndex,
+                lifetime: 0,
+                maxLifetime: 150 + particleIndex * 20
+            };
+            
+            // Create trail particles with staggered positions
+            for (let i = 0; i < 8; i++) {
+                trail.particles.push({
+                    progress: -i * 0.1,
+                    intensity: 1,
+                    size: 2 + Math.random() * 3,
+                    opacity: 1,
+                    trailIndex: i
+                });
+            }
+            
+            signalTrails.push(trail);
+        }
+
+        function createSparkleTrail(startPos, endPos, startNodeId, endNodeId) {
+            const container = document.getElementById('memory-network');
+            const canvasWidth = container.offsetWidth;
+            const canvasHeight = container.offsetHeight;
+            
+            // Create sparkles along the path
+            for (let i = 0; i <= 20; i++) {
+                const t = i / 20;
+                const curveOffset = 40 + Math.sin(t * Math.PI) * 30;
+                
+                // Calculate curved path position
+                const midX = (startPos.x + endPos.x) / 2;
+                const midY = (startPos.y + endPos.y) / 2 - curveOffset;
+                
+                const x = (1 - t) * (1 - t) * startPos.x + 
+                         2 * (1 - t) * t * midX + 
+                         t * t * endPos.x + canvasWidth / 2;
+                const y = (1 - t) * (1 - t) * startPos.y + 
+                         2 * (1 - t) * t * midY + 
+                         t * t * endPos.y + canvasHeight / 2;
+                
+                sparkleSystem.push({
+                    x: x,
+                    y: y,
+                    life: 0,
+                    maxLife: 60 + Math.random() * 40,
+                    size: 1 + Math.random() * 2,
+                    twinkle: Math.random() * Math.PI * 2,
+                    delay: i * 5 + Math.random() * 10,
+                    pathProgress: t,
+                    intensity: 0.8 + Math.random() * 0.2
+                });
+            }
+        }
+
+        function animateSignalTrails() {
+            if (!trailAnimationActive || signalTrails.length === 0) {
+                trailAnimationActive = false;
+                return;
+            }
+            
+            const container = document.getElementById('memory-network');
+            if (!container) return;
+            
+            let overlayCanvas = container.querySelector('.signal-overlay');
+            
+            if (!overlayCanvas) {
+                overlayCanvas = document.createElement('canvas');
+                overlayCanvas.className = 'signal-overlay';
+                overlayCanvas.style.position = 'absolute';
+                overlayCanvas.style.top = '0';
+                overlayCanvas.style.left = '0';
+                overlayCanvas.style.width = '100%';
+                overlayCanvas.style.height = '100%';
+                overlayCanvas.style.pointerEvents = 'none';
+                overlayCanvas.style.zIndex = '5';
+                container.appendChild(overlayCanvas);
+            }
+            
+            overlayCanvas.width = container.offsetWidth;
+            overlayCanvas.height = container.offsetHeight;
+            const ctx = overlayCanvas.getContext('2d');
+            
+            function animateFrame() {
+                if (!trailAnimationActive) {
+                    // Clean up
+                    if (overlayCanvas && overlayCanvas.parentNode) {
+                        overlayCanvas.parentNode.removeChild(overlayCanvas);
                     }
-                    return node;
+                    return;
+                }
+                
+                // Clear with slight fade for trail effect
+                ctx.fillStyle = 'rgba(10, 10, 10, 0.15)';
+                ctx.fillRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                
+                let hasActiveElements = false;
+                
+                // Update and draw signal trails
+                signalTrails = signalTrails.filter(trail => {
+                    if (!trail.active) return false;
+                    
+                    trail.lifetime++;
+                    let hasActiveParticles = false;
+                    
+                    // Draw trail particles
+                    trail.particles.forEach((particle, index) => {
+                        particle.progress += trail.speed;
+                        
+                        if (particle.progress < 0) return;
+                        if (particle.progress > 1.2) {
+                            particle.opacity *= 0.92;
+                            if (particle.opacity < 0.05) return;
+                        }
+                        
+                        hasActiveParticles = true;
+                        hasActiveElements = true;
+                        
+                        // Calculate particle position along curved path
+                        const t = Math.max(0, Math.min(1, particle.progress));
+                        const curveOffset = 40 + Math.sin(trail.particleIndex * 0.5) * 25;
+                        
+                        // Create beautiful curved path
+                        const midX = (trail.startPos.x + trail.endPos.x) / 2;
+                        const midY = (trail.startPos.y + trail.endPos.y) / 2 - curveOffset;
+                        
+                        const x = (1 - t) * (1 - t) * trail.startPos.x + 
+                                 2 * (1 - t) * t * midX + 
+                                 t * t * trail.endPos.x;
+                        const y = (1 - t) * (1 - t) * trail.startPos.y + 
+                                 2 * (1 - t) * t * midY + 
+                                 t * t * trail.endPos.y;
+                        
+                        // Draw particle with enhanced golden neural glow
+                        const intensity = particle.intensity * particle.opacity;
+                        const baseSize = particle.size * (1 + Math.sin(Date.now() * 0.01 + index) * 0.3);
+                        
+                        // Multiple glow layers for better effect
+                        for (let layer = 3; layer >= 0; layer--) {
+                            const layerSize = baseSize * (1 + layer * 0.8);
+                            const layerIntensity = intensity * (0.3 - layer * 0.05);
+                            
+                            let gradient;
+                            if (layer === 0) {
+                                // Inner white core
+                                gradient = ctx.createRadialGradient(x, y, 0, x, y, layerSize);
+                                gradient.addColorStop(0, `rgba(255, 255, 255, ${layerIntensity})`);
+                                gradient.addColorStop(0.4, `rgba(255, 237, 78, ${layerIntensity * 0.9})`);
+                                gradient.addColorStop(1, `rgba(255, 215, 0, 0)`);
+                            } else {
+                                // Outer glow layers
+                                gradient = ctx.createRadialGradient(x, y, 0, x, y, layerSize);
+                                gradient.addColorStop(0, `rgba(255, 237, 78, ${layerIntensity * 0.7})`);
+                                gradient.addColorStop(0.5, `rgba(255, 215, 0, ${layerIntensity * 0.5})`);
+                                gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                            }
+                            
+                            ctx.fillStyle = gradient;
+                            ctx.beginPath();
+                            ctx.arc(x, y, layerSize, 0, Math.PI * 2);
+                            ctx.fill();
+                        }
+                    });
+                    
+                    return hasActiveParticles && trail.lifetime < trail.maxLifetime;
                 });
                 
-                memoryNetwork.setData({
-                    nodes: propagatedNodes,
-                    edges: networkData.edges
-                });
-            }, 300);
-            
-            // Animate second degree connections
-            setTimeout(() => {
-                const secondDegreeUpdated = networkData.nodes.map(node => {
-                    if (secondDegreeNodes.has(node.id)) {
-                        return {
-                            ...node,
-                            color: {
-                                background: 'rgba(59,130,246,0.7)', // Blue for second degree
-                                border: 'rgba(59,130,246,0.9)'
-                            },
-                            borderWidth: 2
-                        };
+                // Update and draw sparkles
+                sparkleSystem = sparkleSystem.filter(sparkle => {
+                    if (sparkle.delay > 0) {
+                        sparkle.delay--;
+                        return true;
                     }
-                    return node;
+                    
+                    sparkle.life++;
+                    sparkle.twinkle += 0.15;
+                    
+                    if (sparkle.life > sparkle.maxLife) {
+                        return false;
+                    }
+                    
+                    hasActiveElements = true;
+                    
+                    // Calculate sparkle intensity with twinkling effect
+                    const lifeRatio = sparkle.life / sparkle.maxLife;
+                    const fadeIn = Math.min(1, sparkle.life / 10);
+                    const fadeOut = lifeRatio > 0.7 ? (1 - (lifeRatio - 0.7) / 0.3) : 1;
+                    const twinkleEffect = Math.sin(sparkle.twinkle) * 0.5 + 0.5;
+                    const intensity = sparkle.intensity * fadeIn * fadeOut * twinkleEffect;
+                    
+                    if (intensity < 0.05) return false;
+                    
+                    // Draw sparkle with multiple sizes for twinkling effect
+                    const size = sparkle.size * (0.5 + twinkleEffect * 0.5);
+                    
+                    // Outer glow
+                    const glowGradient = ctx.createRadialGradient(
+                        sparkle.x, sparkle.y, 0, 
+                        sparkle.x, sparkle.y, size * 3
+                    );
+                    glowGradient.addColorStop(0, `rgba(255, 255, 255, ${intensity * 0.8})`);
+                    glowGradient.addColorStop(0.3, `rgba(255, 237, 78, ${intensity * 0.6})`);
+                    glowGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
+                    
+                    ctx.fillStyle = glowGradient;
+                    ctx.beginPath();
+                    ctx.arc(sparkle.x, sparkle.y, size * 3, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Inner bright core
+                    ctx.fillStyle = `rgba(255, 255, 255, ${intensity})`;
+                    ctx.beginPath();
+                    ctx.arc(sparkle.x, sparkle.y, size, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Add star-like rays for extra sparkle
+                    if (intensity > 0.5) {
+                        ctx.strokeStyle = `rgba(255, 255, 255, ${intensity * 0.7})`;
+                        ctx.lineWidth = 0.5;
+                        ctx.beginPath();
+                        for (let i = 0; i < 4; i++) {
+                            const angle = (i * Math.PI) / 2 + sparkle.twinkle;
+                            const rayLength = size * 2;
+                            ctx.moveTo(
+                                sparkle.x + Math.cos(angle) * rayLength * 0.3,
+                                sparkle.y + Math.sin(angle) * rayLength * 0.3
+                            );
+                            ctx.lineTo(
+                                sparkle.x + Math.cos(angle) * rayLength,
+                                sparkle.y + Math.sin(angle) * rayLength
+                            );
+                        }
+                        ctx.stroke();
+                    }
+                    
+                    return true;
                 });
                 
-                memoryNetwork.setData({
-                    nodes: secondDegreeUpdated,
-                    edges: networkData.edges
-                });
-            }, 800);
+                if (hasActiveElements) {
+                    requestAnimationFrame(animateFrame);
+                } else {
+                    trailAnimationActive = false;
+                    // Clean up overlay
+                    if (overlayCanvas && overlayCanvas.parentNode) {
+                        overlayCanvas.parentNode.removeChild(overlayCanvas);
+                    }
+                    console.log('🌟 Animation completed, canvas cleaned up');
+                }
+            }
             
-            console.log(`🔗 Propagated to ${connectedNodes.size} first-degree, ${secondDegreeNodes.size} second-degree nodes`);
+            animateFrame();
         }
 
         // Threshold slider handler
@@ -1231,11 +1658,7 @@ HTML_TEMPLATE = '''
             loadMemoryNetwork(); // Reload with new threshold
         });
 
-        // Form submit handler
-        document.getElementById('chat-form').addEventListener('submit', function(e) {
-            e.preventDefault();
-            sendMessage();
-        });
+        // No form submit handler needed anymore since we removed the form
 
         // Initialize
         updateThreadTitle();
@@ -1326,11 +1749,31 @@ def memory_network():
 
 @app.route('/send_message', methods=['POST'])
 def send_message():
+    global processed_requests, last_cleanup
+    
     try:
         data = request.get_json()
         message = data.get('message', '').strip()
         thread_id = data.get('thread_id')
         use_memory_search = data.get('use_memory_search', False)
+        request_id = data.get('request_id')
+        
+        # Clean up old request IDs every 5 minutes
+        current_time = time.time()
+        if current_time - last_cleanup > 300:  # 5 minutes
+            processed_requests.clear()
+            last_cleanup = current_time
+            print("🧹 Cleaned up old request IDs")
+        
+        # Check for duplicate request
+        if request_id and request_id in processed_requests:
+            print(f"⚠️ Duplicate request detected: {request_id}")
+            return jsonify({'success': False, 'error': 'Duplicate request detected'}), 409
+        
+        # Add request ID to processed set
+        if request_id:
+            processed_requests.add(request_id)
+            print(f"✅ Processing request: {request_id}")
         
         if not message:
             return jsonify({'success': False, 'error': 'Message cannot be empty'})
