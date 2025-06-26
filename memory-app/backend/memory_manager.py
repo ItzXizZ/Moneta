@@ -351,8 +351,11 @@ class MemoryManager:
         recalled_memories = []  # Track which memories were recalled
         
         for i, similarity in enumerate(similarities):
+            # DEBUG: Log all similarities for debugging
+            memory = self.search_index_map[i]
+            print(f"DEBUG: Memory '{memory['content'][:30]}...' similarity: {similarity:.3f}, min_relevance: {min_relevance}")
+            
             if similarity > min_relevance:
-                memory = self.search_index_map[i]
                 # Hybrid score: semantic relevance + memory importance
                 final_score = (float(similarity) * 0.7) + (memory.get('score', 0) / 100 * 0.3)
                 
@@ -365,6 +368,9 @@ class MemoryManager:
                 
                 # Track recalled memories for reinforcement
                 recalled_memories.append((memory['id'], float(similarity)))
+                print(f"DEBUG: ✅ INCLUDED - Score {similarity:.3f} > threshold {min_relevance}")
+            else:
+                print(f"DEBUG: ❌ FILTERED OUT - Score {similarity:.3f} <= threshold {min_relevance}")
         
         # 3. Sort and get top results
         top_results = sorted(scored_memories, key=lambda x: x['final_score'], reverse=True)[:top_k]

@@ -880,8 +880,8 @@ HTML_TEMPLATE = '''
                         setTimeout(() => {
                             // Double-check that memory network is ready
                             if (memoryNetwork && networkData.nodes.length > 0) {
-                                animateMemoryActivation(activatedMemoryIds);
-                            } else {
+                        animateMemoryActivation(activatedMemoryIds);
+                    } else {
                                 console.log('🔥 ⚠️ Memory network not ready yet, retrying in 1 second...');
                                 setTimeout(() => {
                                     if (memoryNetwork && networkData.nodes.length > 0) {
@@ -973,7 +973,7 @@ HTML_TEMPLATE = '''
             memoriesHtml += '<h4>🧠 Memories Injected:</h4>';
             if (memoryContext && memoryContext.length > 0) {
                 memoryContext.forEach(memory => {
-                    memoriesHtml += `<div class="memories-injected-item">${memory.memory.content}<span class="memories-injected-score">(Score: ${memory.final_score.toFixed(2)})</span></div>`;
+                    memoriesHtml += `<div class="memories-injected-item">${memory.memory.content}<span class="memories-injected-score">(Score: ${memory.relevance_score.toFixed(2)})</span></div>`;
                 });
             } else {
                 memoriesHtml += '<div class="memories-injected-item">No relevant memories were injected for this prompt.</div>';
@@ -1250,15 +1250,15 @@ HTML_TEMPLATE = '''
                     randomSeed: 2
                 }
             };
-
+            
             memoryNetwork = new vis.Network(container, networkData, options);
-        
+            
             // Add click interaction
             memoryNetwork.on('click', function(params) {
                 if (params.nodes.length > 0) {
                     const nodeId = params.nodes[0];
-                    const node = networkData.nodes.find(n => n.id === nodeId);
-                    if (node) {
+                const node = networkData.nodes.find(n => n.id === nodeId);
+                if (node) {
                         alert(`Memory: ${node.content}\nScore: ${node.score}`);
                     }
                 }
@@ -1267,7 +1267,7 @@ HTML_TEMPLATE = '''
             // Improve dragging responsiveness
             memoryNetwork.on('dragStart', function(params) {
                 // Temporarily increase physics responsiveness during drag
-                memoryNetwork.setOptions({
+                    memoryNetwork.setOptions({
                     physics: {
                         barnesHut: {
                             springConstant: 0.04,
@@ -1325,7 +1325,7 @@ HTML_TEMPLATE = '''
                     }); // Use requestAnimationFrame for smooth updates
                 }
             });
-
+            
             console.log('🧠 Memory network initialized');
         }
 
@@ -1346,14 +1346,14 @@ HTML_TEMPLATE = '''
                     const size = Math.max(30, Math.min(65, 30 + node.score * 0.45));
                     
                     return {
-                        id: node.id,
+                    id: node.id,
                         label: node.label.length > 25 ? node.label.substring(0, 25) + '…' : node.label,
-                        title: node.label, // Full text for tooltip
+                    title: node.label, // Full text for tooltip
                         size: size,
-                        color: {
+                    color: {
                             background: `rgba(35,4,55,${intensity})`,
                             border: `rgba(255,255,255,${Math.min(0.4, intensity * 0.5)})`,
-                            highlight: {
+                        highlight: {
                                 background: `rgba(70,9,107,${intensity})`,
                                 border: 'rgba(255,255,255,0.8)'
                             },
@@ -1369,10 +1369,10 @@ HTML_TEMPLATE = '''
                             strokeWidth: 0,
                             strokeColor: 'transparent'
                         },
-                        score: node.score,
-                        tags: node.tags || [],
+                    score: node.score,
+                    tags: node.tags || [],
                         content: node.label,
-                        created: node.created || ''
+                    created: node.created || ''
                     };
                 });
                 
@@ -1572,7 +1572,7 @@ HTML_TEMPLATE = '''
                 const fadedStrength = strength * Math.pow(0.8, hopCount);
                 
                 const particle = createSignalParticle(fadedStrength, signalId);
-                const container = document.getElementById('memory-network');
+            const container = document.getElementById('memory-network');
                 const containerRect = container.getBoundingClientRect();
                 
                 const animationDuration = 100; // Much faster signal travel
@@ -1758,9 +1758,9 @@ HTML_TEMPLATE = '''
             if (glowLevel <= 0.01) {
                 const existingGlow = document.getElementById(`node-glow-${nodeId}`);
                 if (existingGlow) existingGlow.remove();
-                return;
-            }
-
+                    return;
+                }
+                
             // Cache DOM queries for better performance
             let glow = document.getElementById(`node-glow-${nodeId}`);
             
@@ -2292,53 +2292,60 @@ def generate_openai_response_with_memory(message, conversation_history, use_memo
         if MEMORY_AVAILABLE and memory_manager:
             try:
                 print(f"\n🔍 Searching memories for: '{message}'")
+                print(f"🔧 DEBUG: Using min_relevance=0.35 threshold")
                 # Force a quick reload to ensure we have the latest memories
                 try:
                     memory_manager.reload_from_disk()
                 except:
                     pass  # Don't fail if reload fails
-                search_results = memory_manager.search_memories(message, top_k=5, min_relevance=0.35)
-                memory_context = search_results
+                search_results = memory_manager.search_memories(message, top_k=10, min_relevance=0.1)  # Get more results with lower threshold
+                # Apply STRICT relevance filtering - only relevance_score >= 0.35
+                strict_filtered_results = [r for r in search_results if r.get('relevance_score', 0) >= 0.35]
+                print(f"🔧 DEBUG: Raw search returned {len(search_results)} results, strict filter kept {len(strict_filtered_results)}")
+                memory_context = strict_filtered_results[:5]  # Take top 5 after strict filtering
+                search_results = memory_context  # Update search_results to use filtered ones
                 
-                # If no results from local search, try API search as backup with filtering
+                # If no results from strict local search, try API search as backup with STRICT filtering
                 if not search_results:
                     try:
                         api_response = requests.get(f'http://localhost:5000/search/{message}', timeout=5)
                         if api_response.status_code == 200:
                             api_results = api_response.json()
                             if api_results:
-                                # Apply the same relevance filtering to API results
+                                # Apply STRICT relevance filtering to API results - ONLY relevance_score >= 0.35
                                 filtered_api_results = []
                                 for result in api_results:
-                                    # Check if the result has the expected structure and score
                                     if isinstance(result, dict):
-                                        score = result.get('relevance_score', result.get('final_score', 0))
-                                        if score >= 0.35:
+                                        relevance_score = result.get('relevance_score', 0)  # Only check relevance_score
+                                        if relevance_score >= 0.35:
                                             filtered_api_results.append(result)
+                                        print(f"   API result: '{result.get('memory', {}).get('content', 'N/A')[:30]}...' relevance: {relevance_score:.3f} {'✅' if relevance_score >= 0.35 else '❌'}")
                                 
                                 if filtered_api_results:
-                                    print(f"   🔄 Found {len(filtered_api_results)} filtered memories via API fallback (from {len(api_results)} total)")
+                                    print(f"   🔄 Found {len(filtered_api_results)} STRICT filtered memories via API fallback (from {len(api_results)} total)")
                                     memory_context = filtered_api_results[:5]  # Limit to 5
+                                    search_results = memory_context
                                 else:
-                                    print(f"   🔄 API returned {len(api_results)} memories but none met 0.35 threshold")
+                                    print(f"   🔄 API returned {len(api_results)} memories but NONE met STRICT 0.35 relevance threshold")
                     except Exception as e:
                         print(f"   ⚠️ API search fallback failed: {e}")
                 
-                print(f"📊 Found {len(search_results)} relevant memories (min threshold: 0.35):")
+                print(f"📊 Found {len(search_results)} STRICT filtered memories (relevance >= 0.35):")
                 for i, result in enumerate(search_results):
                     print(f"  {i+1}. '{result['memory']['content']}' (relevance: {result['relevance_score']:.3f}, final: {result['final_score']:.3f})")
+                    # All should be >= 0.35 now
+                    if result['relevance_score'] < 0.35:
+                        print(f"       🚨 BUG: This memory passed strict filter but score {result['relevance_score']:.3f} < 0.35!")
                 
                 if search_results:
-                    # Double-check filtering (defensive programming)
-                    filtered_results = [r for r in search_results if r.get('relevance_score', r.get('final_score', 0)) >= 0.35]
-                    if len(filtered_results) != len(search_results):
-                        print(f"🔧 Additional filtering applied: {len(search_results)} -> {len(filtered_results)} memories")
-                        search_results = filtered_results
-                        memory_context = filtered_results
+                    # All results should already be filtered to relevance_score >= 0.35
+                    filtered_results = search_results  # No additional filtering needed
                     
                     if filtered_results:
                         memory_text = "USER MEMORIES (for context):\n"
+                        print(f"🔧 DEBUG: About to inject {len(filtered_results[:3])} memories:")
                         for result in filtered_results[:3]:  # Use top 3
+                            print(f"   - '{result['memory']['content']}' (relevance: {result['relevance_score']:.3f})")
                             memory_text += f"- {result['memory']['content']} (relevance: {result['relevance_score']:.2f})\n"
                             debug_memories.append(result['memory']['content'])
                         memory_text += "\nUse these memories to personalize your response when relevant."
