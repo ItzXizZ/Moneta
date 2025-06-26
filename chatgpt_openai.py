@@ -463,7 +463,7 @@ HTML_TEMPLATE = '''
             backdrop-filter: var(--glass-blur);
             border: 1px solid var(--glass-border);
             border-radius: 16px;
-            padding: 12px;
+            padding: 20px;
             box-shadow: var(--shadow-floating);
             flex: 1;
             min-height: 400px;
@@ -475,19 +475,18 @@ HTML_TEMPLATE = '''
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 8px;
+            margin-bottom: 15px;
             flex-shrink: 0;
         }
 
         .memory-network-header h3 {
             color: var(--primary-300);
             margin: 0;
-            font-size: 1rem;
+            font-size: 1.2rem;
             font-weight: 500;
-            opacity: 0.9;
         }
 
-        .memory-network-controls {
+        .threshold-controls {
             display: flex;
             gap: 10px;
             align-items: center;
@@ -504,18 +503,18 @@ HTML_TEMPLATE = '''
 
         .memory-network-stats {
             display: flex;
-            gap: 8px;
-            margin-bottom: 8px;
-            font-size: 0.75rem;
+            gap: 10px;
+            margin-bottom: 15px;
+            font-size: 0.85rem;
             color: var(--gray-400);
-            flex-shrink: 0;
+            flex-wrap: wrap;
         }
 
         .stat-item {
             background: rgba(31, 41, 55, 0.8);
             backdrop-filter: var(--glass-blur);
-            padding: 6px 10px;
-            border-radius: 6px;
+            padding: 8px 12px;
+            border-radius: 8px;
             border: 1px solid var(--glass-border);
         }
 
@@ -532,6 +531,8 @@ HTML_TEMPLATE = '''
             backdrop-filter: var(--glass-blur);
             position: relative;
             overflow: hidden;
+            height: 100%;
+            width: 100%;
             min-height: 300px;
             box-shadow: 
                 inset 0 0 50px rgba(168, 85, 247, 0.1),
@@ -553,21 +554,12 @@ HTML_TEMPLATE = '''
             z-index: 1;
         }
 
-        .network-loading {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: var(--gray-400);
-            font-style: italic;
-        }
-
         .memory-activity-indicator {
             position: absolute;
-            top: 10px;
-            right: 10px;
+            top: 15px;
+            right: 15px;
             background: linear-gradient(45deg, #ffd700, #ffed4e);
-            color: #000;
+            color: #46096b;
             padding: 8px 12px;
             border-radius: 12px;
             font-size: 0.85rem;
@@ -592,6 +584,33 @@ HTML_TEMPLATE = '''
             50% { 
                 transform: scale(1.05); 
                 box-shadow: 0 0 25px rgba(255, 215, 0, 0.8);
+            }
+        }
+
+        .network-loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--gray-400);
+            font-style: italic;
+            z-index: 2;
+            display: none;
+        }
+
+        .persistent-node-glow {
+            transition: all 0.3s ease-out;
+            animation: gentle-pulse 3s ease-in-out infinite;
+        }
+
+        @keyframes gentle-pulse {
+            0%, 100% { 
+                transform: scale(1); 
+                opacity: var(--glow-opacity, 0.6); 
+            }
+            50% { 
+                transform: scale(1.4); 
+                opacity: calc(var(--glow-opacity, 1) * 1.8); 
             }
         }
 
@@ -694,11 +713,11 @@ HTML_TEMPLATE = '''
             <!-- Memory Network Section -->
             <div class="memory-network-container" id="memory-network-container">
                 <div class="memory-network-header">
-                    <h3>🧠 Memory Network</h3>
-                    <div class="memory-network-controls">
-                        <label for="threshold-slider" style="color: var(--gray-400); font-size: 0.8rem;">Threshold:</label>
+                    <h3>Neural Memory Network</h3>
+                    <div class="threshold-controls">
+                        <label for="threshold-slider" style="color: var(--gray-400); font-size: 0.9rem;">Threshold:</label>
                         <input type="range" id="threshold-slider" class="threshold-slider" min="0.1" max="0.8" step="0.05" value="0.35">
-                        <span id="threshold-value" style="color: var(--primary-400); font-size: 0.8rem;">0.35</span>
+                        <span id="threshold-value" style="color: var(--primary-400); font-size: 0.9rem;">0.35</span>
                     </div>
                 </div>
                 
@@ -735,8 +754,14 @@ HTML_TEMPLATE = '''
         let memoryNetwork = null;
         let networkData = { nodes: [], edges: [] };
         let activeMemories = new Set();
-        let lastActivatedMemories = [];
-        let animationTimeout = null;
+        let currentThreshold = 0.35;
+        
+        // Advanced Signal Trail System for Neural-like Visualization
+        let signalTrails = [];
+        let sparkleSystem = [];
+        let trailAnimationActive = false;
+        let nodeGlowLevels = {}; // Track accumulating glow for each node
+        let activeSignals = 0;
 
         // Auto-resize textarea
         const textarea = document.getElementById('chat-input');
@@ -847,11 +872,28 @@ HTML_TEMPLATE = '''
                         console.log('🔥 🧠 Adding response with memory context');
                         addMessageWithMemoriesInjected(data.response, 'assistant', data.memory_context);
                         
-                        // Animate memory activation in the network
+                        // Extract memory IDs and trigger neural animation
                         const activatedMemoryIds = data.memory_context.map(ctx => ctx.memory.id);
-                        animateMemoryActivation(activatedMemoryIds);
+                        console.log('🔥 🌟 Triggering memory animation for recalled memories:', activatedMemoryIds);
+                        
+                        // Delay animation slightly to let the message render first and ensure network is ready
+                        setTimeout(() => {
+                            // Double-check that memory network is ready
+                            if (memoryNetwork && networkData.nodes.length > 0) {
+                                animateMemoryActivation(activatedMemoryIds);
+                            } else {
+                                console.log('🔥 ⚠️ Memory network not ready yet, retrying in 1 second...');
+                                setTimeout(() => {
+                                    if (memoryNetwork && networkData.nodes.length > 0) {
+                                        animateMemoryActivation(activatedMemoryIds);
+                                    } else {
+                                        console.log('🔥 ❌ Memory network still not ready, skipping animation');
+                                    }
+                                }, 1000);
+                            }
+                        }, 200);
                     } else {
-                        console.log('🔥 💬 Adding simple response');
+                        console.log('🔥 💬 Adding simple response (no memories recalled)');
                         addMessage(data.response, 'assistant');
                     }
                 } else if (response.status === 409) {
@@ -1084,66 +1126,90 @@ HTML_TEMPLATE = '''
         // Memory Network Functions
         function initializeMemoryNetwork() {
             const container = document.getElementById('memory-network');
+            
+            // Clear any loading text first
+            container.innerHTML = '<div class="memory-activity-indicator" id="activity-indicator">🔥 Memory Activity</div>';
+            
             const options = {
                 nodes: {
                     shape: 'dot',
                     scaling: {
-                        min: 15,
-                        max: 45
+                        min: 20,
+                        max: 55
                     },
                     font: {
-                        size: 13,
-                        color: '#f3f4f6',
-                        face: 'Inter, -apple-system, BlinkMacSystemFont, sans-serif',
-                        strokeWidth: 2,
-                        strokeColor: '#000000'
+                        size: 11,
+                        color: '#ffffff',
+                        face: '-apple-system, SF Pro Display, SF Pro Text, Helvetica Neue, Helvetica, Arial, sans-serif',
+                        strokeWidth: 0,
+                        strokeColor: 'transparent',
+                        align: 'center',
+                        vadjust: 0,
+                        multi: false,
+                        bold: {
+                            face: '-apple-system, SF Pro Display, SF Pro Text, Helvetica Neue, Helvetica, Arial, sans-serif',
+                            size: 11,
+                            color: '#ffffff'
+                        }
                     },
-                    borderWidth: 3,
+                    borderWidth: 1,
+                    borderWidthSelected: 2,
                     shadow: {
                         enabled: true,
-                        color: 'rgba(168,85,247,0.4)',
+                        color: 'rgba(17,24,39,0.6)',
                         size: 12,
                         x: 0,
-                        y: 0
+                        y: 3
                     },
                     margin: {
-                        top: 8,
-                        right: 8,
-                        bottom: 8,
-                        left: 8
+                        top: 12,
+                        right: 12,
+                        bottom: 12,
+                        left: 12
+                    },
+                    chosen: {
+                        node: function(values, id, selected, hovering) {
+                            if (hovering) {
+                                values.shadowSize = 12;
+                                values.shadowColor = 'rgba(168,85,247,0.6)';
+                                values.borderWidth = 2;
+                            }
+                        }
                     }
                 },
                 edges: {
-                    width: 1,
+                    width: 1.5,
                     color: { 
-                        color: 'rgba(168,85,247,0.25)',
+                        color: 'rgba(168,85,247,0.15)',
                         highlight: 'rgba(255,215,0,0.9)',
                         hover: 'rgba(255,215,0,0.7)'
                     },
                     smooth: {
                         type: 'curvedCW',
-                        roundness: 0.25,
+                        roundness: 0.2,
                         forceDirection: 'none'
                     },
                     shadow: {
                         enabled: true,
-                        color: 'rgba(168,85,247,0.2)',
-                        size: 8,
+                        color: 'rgba(17,24,39,0.3)',
+                        size: 6,
                         x: 0,
-                        y: 0
+                        y: 2
                     },
                     length: 200,
                     scaling: {
                         min: 1,
-                        max: 8
-                    }
+                        max: 6
+                    },
+                    selectionWidth: 2,
+                    hoverWidth: 2
                 },
                 physics: {
                     enabled: true,
                     barnesHut: {
                         gravitationalConstant: -1200,
                         centralGravity: 0.15,
-                        springLength: 150, // Longer paths for better signal visibility
+                        springLength: 150,
                         springConstant: 0.02,
                         damping: 0.12,
                         avoidOverlap: 0.2
@@ -1157,39 +1223,109 @@ HTML_TEMPLATE = '''
                         updateInterval: 35,
                         fit: true
                     },
-                    // Add this to prevent movement during animation
                     adaptiveTimestep: false,
                     timestep: 0.3
                 },
                 interaction: {
-                    tooltipDelay: 200,
-                    hideEdgesOnDrag: false,
-                    hideNodesOnDrag: false
+                    hover: true,
+                    tooltipDelay: 150,
+                    zoomView: true,
+                    dragView: true,
+                    dragNodes: true,
+                    selectConnectedEdges: false,
+                    hoverConnectedEdges: false,
+                    keyboard: {
+                        enabled: true,
+                        speed: { x: 10, y: 10, zoom: 0.02 },
+                        bindToWindow: false
+                    },
+                    multiselect: false,
+                    navigationButtons: false,
+                    zoomSpeed: 1.0
+                },
+                layout: {
+                    improvedLayout: true,
+                    clusterThreshold: 150,
+                    hierarchical: false,
+                    randomSeed: 2
                 }
             };
-            
+
             memoryNetwork = new vis.Network(container, networkData, options);
-            
-            // Add hover tooltips
-            memoryNetwork.on('hoverNode', function(event) {
-                const nodeId = event.node;
-                const node = networkData.nodes.find(n => n.id === nodeId);
-                if (node) {
-                    memoryNetwork.setOptions({
-                        nodes: {
-                            chosen: {
-                                node: function(values, id, selected, hovering) {
-                                    if (hovering) {
-                                        values.shadow = true;
-                                        values.shadowSize = 10;
-                                    }
-                                }
-                            }
-                        }
-                    });
+        
+            // Add click interaction
+            memoryNetwork.on('click', function(params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    const node = networkData.nodes.find(n => n.id === nodeId);
+                    if (node) {
+                        alert(`Memory: ${node.content}\nScore: ${node.score}`);
+                    }
                 }
             });
+
+            // Improve dragging responsiveness
+            memoryNetwork.on('dragStart', function(params) {
+                // Temporarily increase physics responsiveness during drag
+                memoryNetwork.setOptions({
+                    physics: {
+                        barnesHut: {
+                            springConstant: 0.04,
+                            damping: 0.2,
+                            centralGravity: 0.1
+                        },
+                        maxVelocity: 150
+                    }
+                });
+            });
+
+            let dragUpdateThrottle = null;
             
+            memoryNetwork.on('dragging', function(params) {
+                // Throttle glow updates during drag for better performance
+                if (params.nodes.length > 0 && !dragUpdateThrottle) {
+                    dragUpdateThrottle = requestAnimationFrame(() => {
+                        const nodeId = params.nodes[0];
+                        if (nodeGlowLevels[nodeId] > 0.01) {
+                            updateNodeGlow(nodeId);
+                        }
+                        dragUpdateThrottle = null;
+                    }); // Use requestAnimationFrame for smooth 60fps
+                }
+            });
+
+            memoryNetwork.on('dragEnd', function(params) {
+                // Restore normal physics after drag
+                setTimeout(() => {
+                    memoryNetwork.setOptions({
+                        physics: {
+                            barnesHut: {
+                                springConstant: 0.02,
+                                damping: 0.12,
+                                centralGravity: 0.15
+                            },
+                            maxVelocity: 100
+                        }
+                    });
+                }, 100);
+            });
+
+            let stabilizationThrottle = null;
+            
+            // Update all node glow positions when the network is stabilizing/moving (throttled)
+            memoryNetwork.on('stabilizationProgress', () => {
+                if (!stabilizationThrottle) {
+                    stabilizationThrottle = requestAnimationFrame(() => {
+                        for (const nodeId in nodeGlowLevels) {
+                            if (nodeGlowLevels[nodeId] > 0.01) {
+                                updateNodeGlow(nodeId);
+                            }
+                        }
+                        stabilizationThrottle = null;
+                    }); // Use requestAnimationFrame for smooth updates
+                }
+            });
+
             console.log('🧠 Memory network initialized');
         }
 
@@ -1199,34 +1335,56 @@ HTML_TEMPLATE = '''
                 const response = await fetch(`/memory-network?threshold=${threshold}`);
                 const data = await response.json();
                 
-                // Update network data
-                networkData.nodes = data.nodes.map(node => ({
-                    id: node.id,
-                    label: node.label.length > 30 ? node.label.substring(0, 30) + '...' : node.label,
-                    title: node.label, // Full text for tooltip
-                    size: Math.max(15, Math.min(40, 15 + node.score * 0.3)),
-                    color: {
-                        background: `rgba(168,85,247,${Math.max(0.3, Math.min(1, node.score / 100))})`,
-                        border: 'rgba(168,85,247,0.8)',
-                        highlight: {
-                            background: 'rgba(168,85,247,0.9)',
-                            border: 'rgba(168,85,247,1)'
-                        }
-                    },
-                    score: node.score,
-                    tags: node.tags || [],
-                    created: node.created || ''
-                }));
+                // Initialize node glow levels
+                data.nodes.forEach(node => {
+                    nodeGlowLevels[node.id] = 0;
+                });
+                
+                // Create nodes with elegant Apple-style design
+                networkData.nodes = data.nodes.map(node => {
+                    const intensity = Math.max(0.7, Math.min(1, node.score / 100));
+                    const size = Math.max(30, Math.min(65, 30 + node.score * 0.45));
+                    
+                    return {
+                        id: node.id,
+                        label: node.label.length > 25 ? node.label.substring(0, 25) + '…' : node.label,
+                        title: node.label, // Full text for tooltip
+                        size: size,
+                        color: {
+                            background: `rgba(35,4,55,${intensity})`,
+                            border: `rgba(255,255,255,${Math.min(0.4, intensity * 0.5)})`,
+                            highlight: {
+                                background: `rgba(70,9,107,${intensity})`,
+                                border: 'rgba(255,255,255,0.8)'
+                            },
+                            hover: {
+                                background: `rgba(50,6,80,${intensity})`,
+                                border: 'rgba(255,255,255,0.6)'
+                            }
+                        },
+                        font: {
+                            size: Math.max(10, Math.min(12, 8 + size * 0.08)),
+                            color: '#ffffff',
+                            face: '-apple-system, SF Pro Display, SF Pro Text, Helvetica Neue, Helvetica, Arial, sans-serif',
+                            strokeWidth: 0,
+                            strokeColor: 'transparent'
+                        },
+                        score: node.score,
+                        tags: node.tags || [],
+                        content: node.label,
+                        created: node.created || ''
+                    };
+                });
                 
                 networkData.edges = data.edges.map(edge => ({
                     from: edge.from,
                     to: edge.to,
                     value: edge.value,
-                    width: Math.max(1, edge.value * 3),
+                    width: Math.max(1, edge.value * 6),
                     color: {
                         color: `rgba(168,85,247,${Math.max(0.2, edge.value * 0.8)})`,
-                        highlight: 'rgba(168,85,247,1)',
-                        hover: 'rgba(168,85,247,0.8)'
+                        highlight: 'rgba(255,215,0,1)',
+                        hover: 'rgba(255,215,0,0.8)'
                     },
                     title: `Similarity: ${edge.value.toFixed(3)}`
                 }));
@@ -1242,6 +1400,10 @@ HTML_TEMPLATE = '''
                 document.getElementById('active-memories').textContent = activeMemories.size;
                 
                 console.log(`🧠 Loaded ${data.nodes.length} memories, ${data.edges.length} connections`);
+                console.log('🧠 📊 Available node IDs:', data.nodes.map(n => n.id));
+                
+                // Start glow decay system
+                startGlowDecay();
                 
             } catch (error) {
                 console.error('Error loading memory network:', error);
@@ -1249,9 +1411,29 @@ HTML_TEMPLATE = '''
         }
 
         function animateMemoryActivation(activatedMemoryIds) {
-            if (!memoryNetwork || !activatedMemoryIds.length) return;
+            if (!memoryNetwork || !activatedMemoryIds.length) {
+                console.log('🔥 ❌ Cannot animate - missing network or no memory IDs');
+                return;
+            }
             
-            console.log('🔥 Animating memory activation:', activatedMemoryIds);
+            console.log('🔥 🌟 STARTING MEMORY ACTIVATION ANIMATION');
+            console.log('🔥 📝 Activating memory IDs:', activatedMemoryIds);
+            
+            // Verify these nodes exist in our network
+            const existingNodeIds = networkData.nodes.map(node => node.id);
+            const validMemoryIds = activatedMemoryIds.filter(id => existingNodeIds.includes(id));
+            const invalidMemoryIds = activatedMemoryIds.filter(id => !existingNodeIds.includes(id));
+            
+            if (invalidMemoryIds.length > 0) {
+                console.log('🔥 ⚠️ Some memory IDs not found in network:', invalidMemoryIds);
+            }
+            
+            if (validMemoryIds.length === 0) {
+                console.log('🔥 ❌ No valid memory IDs found in current network');
+                return;
+            }
+            
+            console.log('🔥 ✅ Valid memory IDs for animation:', validMemoryIds);
             
             // Show activity indicator
             const indicator = document.getElementById('activity-indicator');
@@ -1270,13 +1452,14 @@ HTML_TEMPLATE = '''
                 lastSearchElement.textContent = new Date().toLocaleTimeString();
             }
             
-            // Start the signal animation WITHOUT updating network data
+            // Start the signal animation with valid IDs only
             setTimeout(() => {
-                createNeuralPropagationEffect(activatedMemoryIds);
-            }, 500);
+                console.log('🔥 🚀 Starting neural propagation effect...');
+                createNeuralPropagationEffect(validMemoryIds);
+            }, 100); // Reduced delay for more immediate response
             
             // Update active memories count
-            activeMemories = new Set(activatedMemoryIds);
+            activeMemories = new Set(validMemoryIds);
             const activeMemoriesElement = document.getElementById('active-memories');
             if (activeMemoriesElement) {
                 activeMemoriesElement.textContent = activeMemories.size;
@@ -1293,368 +1476,505 @@ HTML_TEMPLATE = '''
         }
 
         function createNeuralPropagationEffect(activatedMemoryIds) {
-            // Find connected nodes for propagation
-            const connectedNodes = new Set();
-            const activatedSet = new Set(activatedMemoryIds);
+            console.log('🔥 ⚡ Creating neural propagation effect for:', activatedMemoryIds);
             
-            networkData.edges.forEach(edge => {
-                if (activatedSet.has(edge.from)) {
-                    connectedNodes.add(edge.to);
-                } else if (activatedSet.has(edge.to)) {
-                    connectedNodes.add(edge.from);
-                }
+            // Reset global visited nodes for new simulation
+            globalVisitedNodes.clear();
+            
+            // Add immediate effects to activated nodes
+            activatedMemoryIds.forEach((startNodeId, index) => {
+                console.log(`🔥 💫 Activating node ${index + 1}/${activatedMemoryIds.length}: ${startNodeId}`);
+                
+                // Give initial activated nodes immediate glow, pulse, and vibration
+                addNodeGlow(startNodeId, 1.0);
+                createNodePulse(startNodeId, 1.0);
+                createNodeVibration(startNodeId, 1.0);
             });
             
-            // Start the beautiful signal trail animation
-            if (connectedNodes.size > 0) {
-                createAdvancedSignalTrails(activatedMemoryIds, Array.from(connectedNodes));
-            }
-            
-            // Create secondary propagation wave
-            setTimeout(() => {
-                const secondaryConnected = new Set();
-            networkData.edges.forEach(edge => {
-                    if (connectedNodes.has(edge.from) && !activatedSet.has(edge.to)) {
-                        secondaryConnected.add(edge.to);
-                    } else if (connectedNodes.has(edge.to) && !activatedSet.has(edge.from)) {
-                        secondaryConnected.add(edge.from);
-                    }
-                });
-                
-                if (secondaryConnected.size > 0) {
-                    createAdvancedSignalTrails(Array.from(connectedNodes), Array.from(secondaryConnected));
-                }
-            }, 1000);
-        }
-
-
-
-        // Advanced Signal Trail System for Neural-like Visualization
-        let signalTrails = [];
-        let sparkleSystem = [];
-        let trailAnimationActive = false;
-
-        function createAdvancedSignalTrails(startNodeIds, connectedNodeIds) {
-            if (!memoryNetwork) return;
-            
-            console.log('🌟 Creating advanced signal trails from:', startNodeIds, 'to:', connectedNodeIds);
-            
-            // Get node positions (this won't change them, just reads current positions)
-            const nodePositions = memoryNetwork.getPositions();
-            
-            // Clear existing trails to prevent overlap
-            signalTrails = [];
-            sparkleSystem = [];
-            
-            // Create signal trails for each connection
-            startNodeIds.forEach(startNodeId => {
-                connectedNodeIds.forEach(connectedNodeId => {
-                    const startPos = nodePositions[startNodeId];
-                    const endPos = nodePositions[connectedNodeId];
-                    
-                    if (startPos && endPos) {
-                        // Create multiple signal particles for this connection
-                        for (let i = 0; i < 3; i++) {
-            setTimeout(() => {
-                                createSignalTrail(startPos, endPos, startNodeId, connectedNodeId, i);
-                            }, i * 100);
-                        }
-                        
-                        // Create sparkle trail along the path
-                        setTimeout(() => {
-                            createSparkleTrail(startPos, endPos, startNodeId, connectedNodeId);
-                        }, 200);
-                    }
-                });
+            // Start signal propagation from each activated node with slight delay for visual effect
+            activatedMemoryIds.forEach((startNodeId, index) => {
+                setTimeout(() => {
+                    console.log(`🔥 🌊 Starting propagation from node: ${startNodeId}`);
+                    propagateSignalFromNode(startNodeId, 0, new Set(), 1.0);
+                }, index * 150); // Stagger the start of each propagation
             });
-            
-            if (!trailAnimationActive) {
-                trailAnimationActive = true;
-                animateSignalTrails();
-            }
         }
 
-        function createSignalTrail(startPos, endPos, startNodeId, endNodeId, particleIndex) {
-            // Get the canvas container coordinates
-            const container = document.getElementById('memory-network');
-            const rect = container.getBoundingClientRect();
-            
-            // Transform vis.js coordinates to canvas coordinates
-            const canvasWidth = container.offsetWidth;
-            const canvasHeight = container.offsetHeight;
-            
-            const trail = {
-                id: `trail_${Date.now()}_${particleIndex}`,
-                startPos: { 
-                    x: startPos.x + canvasWidth / 2, 
-                    y: startPos.y + canvasHeight / 2 
-                },
-                endPos: { 
-                    x: endPos.x + canvasWidth / 2, 
-                    y: endPos.y + canvasHeight / 2 
-                },
-                progress: 0,
-                speed: 0.012 + (Math.random() * 0.008),
-                particles: [],
-                active: true,
-                startNodeId: startNodeId,
-                endNodeId: endNodeId,
-                particleIndex: particleIndex,
-                lifetime: 0,
-                maxLifetime: 150 + particleIndex * 20
-            };
-            
-            // Create trail particles with staggered positions
-            for (let i = 0; i < 8; i++) {
-                trail.particles.push({
-                    progress: -i * 0.1,
-                    intensity: 1,
-                    size: 2 + Math.random() * 3,
-                    opacity: 1,
-                    trailIndex: i
-                });
-            }
-            
-            signalTrails.push(trail);
-        }
-
-        function createSparkleTrail(startPos, endPos, startNodeId, endNodeId) {
-            const container = document.getElementById('memory-network');
-            const canvasWidth = container.offsetWidth;
-            const canvasHeight = container.offsetHeight;
-            
-            // Create sparkles along the path
-            for (let i = 0; i <= 20; i++) {
-                const t = i / 20;
-                const curveOffset = 40 + Math.sin(t * Math.PI) * 30;
-                
-                // Calculate curved path position
-                const midX = (startPos.x + endPos.x) / 2;
-                const midY = (startPos.y + endPos.y) / 2 - curveOffset;
-                
-                const x = (1 - t) * (1 - t) * startPos.x + 
-                         2 * (1 - t) * t * midX + 
-                         t * t * endPos.x + canvasWidth / 2;
-                const y = (1 - t) * (1 - t) * startPos.y + 
-                         2 * (1 - t) * t * midY + 
-                         t * t * endPos.y + canvasHeight / 2;
-                
-                sparkleSystem.push({
-                    x: x,
-                    y: y,
-                    life: 0,
-                    maxLife: 60 + Math.random() * 40,
-                    size: 1 + Math.random() * 2,
-                    twinkle: Math.random() * Math.PI * 2,
-                    delay: i * 5 + Math.random() * 10,
-                    pathProgress: t,
-                    intensity: 0.8 + Math.random() * 0.2
-                });
-            }
-        }
-
-        function animateSignalTrails() {
-            if (!trailAnimationActive || signalTrails.length === 0) {
-                trailAnimationActive = false;
+        // Global visited tracking to prevent infinite loops
+        let globalVisitedNodes = new Set();
+        
+        async function propagateSignalFromNode(currentNodeId, hopCount, visitedNodes, signalStrength) {
+            // Stop if we've reached max hops, signal is too weak, or node already visited globally
+            if (hopCount >= 5 || signalStrength < 0.15 || globalVisitedNodes.has(currentNodeId)) {
                 return;
             }
             
-            const container = document.getElementById('memory-network');
-            if (!container) return;
+            // Add current node to both local and global visited sets
+            const newVisited = new Set(visitedNodes);
+            newVisited.add(currentNodeId);
+            globalVisitedNodes.add(currentNodeId);
             
-            let overlayCanvas = container.querySelector('.signal-overlay');
+            // Add glow to current node
+            addNodeGlow(currentNodeId, signalStrength);
             
-            if (!overlayCanvas) {
-                overlayCanvas = document.createElement('canvas');
-                overlayCanvas.className = 'signal-overlay';
-                overlayCanvas.style.position = 'absolute';
-                overlayCanvas.style.top = '0';
-                overlayCanvas.style.left = '0';
-                overlayCanvas.style.width = '100%';
-                overlayCanvas.style.height = '100%';
-                overlayCanvas.style.pointerEvents = 'none';
-                overlayCanvas.style.zIndex = '5';
-                container.appendChild(overlayCanvas);
+            // Find all connected neighbors
+            const neighbors = getConnectedNeighbors(currentNodeId);
+            
+            // Filter out already visited neighbors (check global visited)
+            const unvisitedNeighbors = neighbors.filter(neighborId => !globalVisitedNodes.has(neighborId));
+            
+            if (unvisitedNeighbors.length === 0) {
+                return; // No more neighbors to visit
             }
             
-            overlayCanvas.width = container.offsetWidth;
-            overlayCanvas.height = container.offsetHeight;
-            const ctx = overlayCanvas.getContext('2d');
+            // Propagate to each neighbor with staggered timing
+            const propagationPromises = unvisitedNeighbors.map((neighborId, index) => {
+                return new Promise(resolve => {
+                    setTimeout(async () => {
+                        const newStrength = signalStrength * 0.85; // Less signal degradation
+                        
+                        // Animate signal to neighbor with hop count for fading trails
+                        await animateSignalToNeighbor(currentNodeId, neighborId, newStrength, `hop-${hopCount}-${index}`, hopCount);
+                        
+                        // Continue propagation from neighbor after shorter delay
+                        setTimeout(() => {
+                            propagateSignalFromNode(neighborId, hopCount + 1, newVisited, newStrength);
+                            resolve();
+                        }, 50); // Even shorter delay between hops
+                    }, index * 75); // Even faster staggering
+                });
+            });
             
-            function animateFrame() {
-                if (!trailAnimationActive) {
-                    // Clean up
-                    if (overlayCanvas && overlayCanvas.parentNode) {
-                        overlayCanvas.parentNode.removeChild(overlayCanvas);
+            await Promise.all(propagationPromises);
+        }
+
+        function getConnectedNeighbors(nodeId) {
+            const neighbors = [];
+            networkData.edges.forEach(edge => {
+                if (edge.from === nodeId) {
+                    neighbors.push(edge.to);
+                } else if (edge.to === nodeId) {
+                    neighbors.push(edge.from);
+                }
+            });
+            return neighbors;
+        }
+
+
+
+
+
+        async function animateSignalToNeighbor(fromId, toId, strength, signalId, hopCount = 0) {
+            return new Promise(resolve => {
+                activeSignals++;
+                
+                // Calculate fading strength based on hop count (50% fainter each hop)
+                const fadedStrength = strength * Math.pow(0.8, hopCount);
+                
+                const particle = createSignalParticle(fadedStrength, signalId);
+                const container = document.getElementById('memory-network');
+                const containerRect = container.getBoundingClientRect();
+                
+                const animationDuration = 100; // Much faster signal travel
+                const startTime = Date.now();
+                const trail = [];
+                
+                const animate = () => {
+                    const elapsed = Date.now() - startTime;
+                    const progress = Math.min(elapsed / animationDuration, 1);
+                    
+                    const positions = memoryNetwork.getPositions([fromId, toId]);
+                    const fromPos = memoryNetwork.canvasToDOM(positions[fromId]);
+                    const toPos = memoryNetwork.canvasToDOM(positions[toId]);
+                    
+                    const eased = easeInOutCubic(progress);
+                    
+                    // Create curved path similar to vis.js edges
+                    const { currentX, currentY } = getCurvedPathPosition(fromPos, toPos, eased, fromId, toId);
+                    
+                    particle.style.left = (containerRect.left + currentX) + 'px';
+                    particle.style.top = (containerRect.top + currentY) + 'px';
+                    
+                    // Create continuous trail effect
+                    trail.push({ x: currentX, y: currentY, time: elapsed });
+                    
+                    // Keep trail length manageable
+                    if (trail.length > 15) {
+                        trail.shift();
                     }
+                    
+                    // Draw continuous trail with faded strength
+                    if (trail.length > 1) {
+                        drawContinuousTrail(trail, fadedStrength, containerRect, signalId);
+                    }
+                    
+                    // Dynamic scaling and opacity using faded strength
+                    const scale = fadedStrength * (1 + Math.sin(progress * Math.PI * 2) * 0.2);
+                    particle.style.transform = `translate(-50%, -50%) scale(${scale})`;
+                    particle.style.opacity = Math.max(0.2, fadedStrength * (Math.sin(progress * Math.PI) * 0.7 + 0.3));
+                    
+                    if (progress < 1) {
+                        requestAnimationFrame(animate);
+                    } else {
+                        // Signal reaches destination with faded strength
+                        addNodeGlow(toId, fadedStrength);
+                        createNodePulse(toId, fadedStrength);
+                        createNodeVibration(toId, fadedStrength);
+                        
+                        particle.style.transition = 'all 0.4s ease-out';
+                        particle.style.opacity = '0';
+                        particle.style.transform = 'translate(-50%, -50%) scale(0)';
+                        
+                        setTimeout(() => {
+                            particle.remove();
+                            // Clean up trail for this signal
+                            const trailElement = document.querySelector(`.continuous-trail-${signalId}`);
+                            if (trailElement) {
+                                trailElement.style.transition = 'opacity 0.3s ease-out';
+                                trailElement.style.opacity = '0';
+                                setTimeout(() => trailElement.remove(), 300);
+                            }
+                            activeSignals--;
+                            resolve();
+                        }, 400);
+                    }
+                };
+                
+                requestAnimationFrame(animate);
+            });
+        }
+
+        function createSignalParticle(strength, signalId) {
+            const particle = document.createElement('div');
+            const size = Math.max(16, 32 * strength); // Larger particles
+            const intensity = Math.max(0.7, strength); // Higher minimum intensity
+            
+            particle.className = `signal-particle-${signalId}`;
+            particle.style.position = 'fixed';
+            particle.style.width = size + 'px';
+            particle.style.height = size + 'px';
+            particle.style.borderRadius = '50%';
+            particle.style.background = `radial-gradient(circle, rgba(255, 255, 255, ${intensity}) 0%, rgba(255, 215, 0, ${intensity * 0.9}) 30%, rgba(255, 152, 0, ${intensity * 0.7}) 100%)`;
+            particle.style.boxShadow = `0 0 ${size * 2}px rgba(255, 215, 0, ${intensity}), 0 0 ${size * 4}px rgba(255, 152, 0, ${intensity * 0.8}), 0 0 ${size * 6}px rgba(255, 215, 0, ${intensity * 0.4})`;
+            particle.style.zIndex = '995';
+            particle.style.pointerEvents = 'none';
+            particle.style.transform = 'translate(-50%, -50%)';
+            document.body.appendChild(particle);
+            return particle;
+        }
+
+        function drawContinuousTrail(trail, strength, containerRect, signalId = 'default') {
+            // Remove any existing trail for this specific signal
+            const existingTrail = document.querySelector(`.continuous-trail-${signalId}`);
+            if (existingTrail) {
+                existingTrail.remove();
+            }
+            
+            // Create SVG for smooth trail
+            const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+            svg.className = `continuous-trail continuous-trail-${signalId}`;
+            svg.style.position = 'fixed';
+            svg.style.top = '0';
+            svg.style.left = '0';
+            svg.style.width = '100vw';
+            svg.style.height = '100vh';
+            svg.style.pointerEvents = 'none';
+            svg.style.zIndex = '990';
+            document.body.appendChild(svg);
+            
+            // Create path for trail
+            const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+            
+            // Build path data
+            let pathData = '';
+            trail.forEach((point, index) => {
+                const x = containerRect.left + point.x;
+                const y = containerRect.top + point.y;
+                
+                if (index === 0) {
+                    pathData += `M ${x} ${y}`;
+                } else {
+                    pathData += ` L ${x} ${y}`;
+                }
+            });
+            
+            path.setAttribute('d', pathData);
+            path.setAttribute('stroke', `rgba(255, 215, 0, ${strength * 0.8})`);
+            path.setAttribute('stroke-width', Math.max(3, strength * 6));
+            path.setAttribute('fill', 'none');
+            path.setAttribute('stroke-linecap', 'round');
+            path.setAttribute('stroke-linejoin', 'round');
+            path.style.filter = `drop-shadow(0 0 ${strength * 8}px rgba(255, 215, 0, ${strength * 0.6}))`;
+            
+            // Add gradient effect
+            const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+            const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+            gradient.setAttribute('id', 'trailGradient');
+            gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
+            
+            const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop1.setAttribute('offset', '0%');
+            stop1.setAttribute('stop-color', `rgba(255, 215, 0, 0)`);
+            
+            const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop2.setAttribute('offset', '70%');
+            stop2.setAttribute('stop-color', `rgba(255, 215, 0, ${strength * 0.6})`);
+            
+            const stop3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+            stop3.setAttribute('offset', '100%');
+            stop3.setAttribute('stop-color', `rgba(255, 255, 255, ${strength})`);
+            
+            gradient.appendChild(stop1);
+            gradient.appendChild(stop2);
+            gradient.appendChild(stop3);
+            defs.appendChild(gradient);
+            svg.appendChild(defs);
+            
+            path.setAttribute('stroke', 'url(#trailGradient)');
+            svg.appendChild(path);
+            
+            // Auto-remove trail after animation (optimized)
+            setTimeout(() => {
+                if (svg.parentNode) {
+                    svg.remove(); // Direct removal for better performance
+                }
+            }, 150); // Shorter timeout for faster cleanup
+        }
+
+        function addNodeGlow(nodeId, strength) {
+            // Set glow strength (don't accumulate, just set to current strength)
+            nodeGlowLevels[nodeId] = Math.min(1.0, strength);
+            updateNodeGlow(nodeId);
+            createNodePulse(nodeId, strength);
+            
+            // Restart decay interval if not already running
+            if (!glowDecayInterval) {
+                startGlowDecay();
+            }
+        }
+
+        function updateNodeGlow(nodeId) {
+            const glowLevel = nodeGlowLevels[nodeId];
+            if (glowLevel <= 0.01) {
+                const existingGlow = document.getElementById(`node-glow-${nodeId}`);
+                if (existingGlow) existingGlow.remove();
+                return;
+            }
+
+            // Cache DOM queries for better performance
+            let glow = document.getElementById(`node-glow-${nodeId}`);
+            
+            if (!glow) {
+                glow = document.createElement('div');
+                glow.id = `node-glow-${nodeId}`;
+                glow.className = 'persistent-node-glow';
+                glow.style.position = 'fixed';
+                glow.style.borderRadius = '50%';
+                glow.style.pointerEvents = 'none';
+                glow.style.zIndex = '992';
+                glow.style.transition = 'opacity 0.3s ease-out'; // Keep opacity transition for smooth appearance
+                glow.style.animation = 'gentle-pulse 2s ease-in-out infinite';
+                document.body.appendChild(glow);
+            }
+
+            // Get positions only once
+            const positions = memoryNetwork.getPositions([nodeId]);
+            const nodePos = memoryNetwork.canvasToDOM(positions[nodeId]);
+            const container = document.getElementById('memory-network');
+            const containerRect = container.getBoundingClientRect();
+            
+            const size = Math.max(60, 120 * glowLevel);
+            
+            // Batch style updates using transform for better performance
+            const x = containerRect.left + nodePos.x - size/2;
+            const y = containerRect.top + nodePos.y - size/2;
+            
+            glow.style.transform = `translate(${x}px, ${y}px)`;
+            glow.style.width = size + 'px';
+            glow.style.height = size + 'px';
+            glow.style.background = `radial-gradient(circle, rgba(168,85,247,${Math.floor(glowLevel * 120).toString(16).padStart(2, '0')}) 0%, rgba(168,85,247,${Math.floor(glowLevel * 60).toString(16).padStart(2, '0')}) 40%, transparent 70%)`;
+            glow.style.opacity = Math.min(0.8, glowLevel * 1.1);
+            glow.style.filter = `blur(${Math.max(2, 6 * glowLevel)}px)`;
+            glow.style.setProperty('--glow-opacity', glowLevel.toString());
+        }
+
+        function createNodePulse(nodeId, strength) {
+            const positions = memoryNetwork.getPositions([nodeId]);
+            const nodePos = memoryNetwork.canvasToDOM(positions[nodeId]);
+            const container = document.getElementById('memory-network');
+            const containerRect = container.getBoundingClientRect();
+            
+            for (let i = 0; i < Math.ceil(strength * 2); i++) {
+                setTimeout(() => {
+                    const pulse = document.createElement('div');
+                    const size = 80 * strength;
+                    
+                    pulse.style.position = 'fixed';
+                    pulse.style.left = (containerRect.left + nodePos.x - size/2) + 'px';
+                    pulse.style.top = (containerRect.top + nodePos.y - size/2) + 'px';
+                    pulse.style.width = size + 'px';
+                    pulse.style.height = size + 'px';
+                    pulse.style.borderRadius = '50%';
+                    pulse.style.border = '3px solid rgba(168,85,247,0.8)';
+                    pulse.style.pointerEvents = 'none';
+                    pulse.style.zIndex = '993';
+                    pulse.style.opacity = strength;
+                    document.body.appendChild(pulse);
+
+                    pulse.style.transition = 'all 0.8s ease-out';
+                    pulse.style.transform = 'scale(2.5)';
+                    pulse.style.opacity = '0';
+
+                    setTimeout(() => pulse.remove(), 800);
+                }, i * 150);
+            }
+        }
+
+        function createNodeVibration(nodeId, strength) {
+            const positions = memoryNetwork.getPositions([nodeId]);
+            const nodePos = memoryNetwork.canvasToDOM(positions[nodeId]);
+            const container = document.getElementById('memory-network');
+            const containerRect = container.getBoundingClientRect();
+            
+            // Create vibration effect overlay
+            const vibration = document.createElement('div');
+            const size = Math.max(40, 60 * strength);
+            
+            vibration.style.position = 'fixed';
+            vibration.style.left = (containerRect.left + nodePos.x - size/2) + 'px';
+            vibration.style.top = (containerRect.top + nodePos.y - size/2) + 'px';
+            vibration.style.width = size + 'px';
+            vibration.style.height = size + 'px';
+            vibration.style.borderRadius = '50%';
+            vibration.style.background = `radial-gradient(circle, rgba(255,255,255,${strength * 0.8}) 0%, rgba(255,215,0,${strength * 0.6}) 50%, transparent 100%)`;
+            vibration.style.pointerEvents = 'none';
+            vibration.style.zIndex = '994';
+            vibration.style.opacity = Math.min(0.9, strength * 1.2);
+            document.body.appendChild(vibration);
+
+            // Create intense vibration animation
+            const vibrationIntensity = Math.max(2, strength * 8);
+            const vibrationDuration = Math.max(200, strength * 400);
+            const vibrationSteps = 12;
+            
+            let step = 0;
+            const vibrateInterval = setInterval(() => {
+                if (step >= vibrationSteps) {
+                    clearInterval(vibrateInterval);
+                    vibration.style.transition = 'all 0.2s ease-out';
+                    vibration.style.opacity = '0';
+                    vibration.style.transform = 'scale(0.5)';
+                    setTimeout(() => vibration.remove(), 200);
                     return;
                 }
                 
-                // Clear with slight fade for trail effect
-                ctx.fillStyle = 'rgba(10, 10, 10, 0.15)';
-                ctx.fillRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+                // Random shake in all directions
+                const offsetX = (Math.random() - 0.5) * vibrationIntensity;
+                const offsetY = (Math.random() - 0.5) * vibrationIntensity;
+                const scale = 1 + (Math.random() - 0.5) * 0.3 * strength;
                 
-                let hasActiveElements = false;
+                vibration.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
                 
-                // Update and draw signal trails
-                signalTrails = signalTrails.filter(trail => {
-                    if (!trail.active) return false;
-                    
-                    trail.lifetime++;
-                    let hasActiveParticles = false;
-                    
-                    // Draw trail particles
-                    trail.particles.forEach((particle, index) => {
-                        particle.progress += trail.speed;
-                        
-                        if (particle.progress < 0) return;
-                        if (particle.progress > 1.2) {
-                            particle.opacity *= 0.92;
-                            if (particle.opacity < 0.05) return;
-                        }
-                        
-                        hasActiveParticles = true;
-                        hasActiveElements = true;
-                        
-                        // Calculate particle position along curved path
-                        const t = Math.max(0, Math.min(1, particle.progress));
-                        const curveOffset = 40 + Math.sin(trail.particleIndex * 0.5) * 25;
-                        
-                        // Create beautiful curved path
-                        const midX = (trail.startPos.x + trail.endPos.x) / 2;
-                        const midY = (trail.startPos.y + trail.endPos.y) / 2 - curveOffset;
-                        
-                        const x = (1 - t) * (1 - t) * trail.startPos.x + 
-                                 2 * (1 - t) * t * midX + 
-                                 t * t * trail.endPos.x;
-                        const y = (1 - t) * (1 - t) * trail.startPos.y + 
-                                 2 * (1 - t) * t * midY + 
-                                 t * t * trail.endPos.y;
-                        
-                        // Draw particle with enhanced golden neural glow
-                        const intensity = particle.intensity * particle.opacity;
-                        const baseSize = particle.size * (1 + Math.sin(Date.now() * 0.01 + index) * 0.3);
-                        
-                        // Multiple glow layers for better effect
-                        for (let layer = 3; layer >= 0; layer--) {
-                            const layerSize = baseSize * (1 + layer * 0.8);
-                            const layerIntensity = intensity * (0.3 - layer * 0.05);
-                            
-                            let gradient;
-                            if (layer === 0) {
-                                // Inner white core
-                                gradient = ctx.createRadialGradient(x, y, 0, x, y, layerSize);
-                                gradient.addColorStop(0, `rgba(255, 255, 255, ${layerIntensity})`);
-                                gradient.addColorStop(0.4, `rgba(255, 237, 78, ${layerIntensity * 0.9})`);
-                                gradient.addColorStop(1, `rgba(255, 215, 0, 0)`);
-                            } else {
-                                // Outer glow layers
-                                gradient = ctx.createRadialGradient(x, y, 0, x, y, layerSize);
-                                gradient.addColorStop(0, `rgba(255, 237, 78, ${layerIntensity * 0.7})`);
-                                gradient.addColorStop(0.5, `rgba(255, 215, 0, ${layerIntensity * 0.5})`);
-                                gradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
-                            }
-                            
-                            ctx.fillStyle = gradient;
-                            ctx.beginPath();
-                            ctx.arc(x, y, layerSize, 0, Math.PI * 2);
-                            ctx.fill();
-                        }
-                    });
-                    
-                    return hasActiveParticles && trail.lifetime < trail.maxLifetime;
-                });
-                
-                // Update and draw sparkles
-                sparkleSystem = sparkleSystem.filter(sparkle => {
-                    if (sparkle.delay > 0) {
-                        sparkle.delay--;
-                        return true;
-                    }
-                    
-                    sparkle.life++;
-                    sparkle.twinkle += 0.15;
-                    
-                    if (sparkle.life > sparkle.maxLife) {
-                        return false;
-                    }
-                    
-                    hasActiveElements = true;
-                    
-                    // Calculate sparkle intensity with twinkling effect
-                    const lifeRatio = sparkle.life / sparkle.maxLife;
-                    const fadeIn = Math.min(1, sparkle.life / 10);
-                    const fadeOut = lifeRatio > 0.7 ? (1 - (lifeRatio - 0.7) / 0.3) : 1;
-                    const twinkleEffect = Math.sin(sparkle.twinkle) * 0.5 + 0.5;
-                    const intensity = sparkle.intensity * fadeIn * fadeOut * twinkleEffect;
-                    
-                    if (intensity < 0.05) return false;
-                    
-                    // Draw sparkle with multiple sizes for twinkling effect
-                    const size = sparkle.size * (0.5 + twinkleEffect * 0.5);
-                    
-                    // Outer glow
-                    const glowGradient = ctx.createRadialGradient(
-                        sparkle.x, sparkle.y, 0, 
-                        sparkle.x, sparkle.y, size * 3
-                    );
-                    glowGradient.addColorStop(0, `rgba(255, 255, 255, ${intensity * 0.8})`);
-                    glowGradient.addColorStop(0.3, `rgba(255, 237, 78, ${intensity * 0.6})`);
-                    glowGradient.addColorStop(1, 'rgba(255, 215, 0, 0)');
-                    
-                    ctx.fillStyle = glowGradient;
-                    ctx.beginPath();
-                    ctx.arc(sparkle.x, sparkle.y, size * 3, 0, Math.PI * 2);
-                    ctx.fill();
-                    
-                    // Inner bright core
-                    ctx.fillStyle = `rgba(255, 255, 255, ${intensity})`;
-                    ctx.beginPath();
-                    ctx.arc(sparkle.x, sparkle.y, size, 0, Math.PI * 2);
-                    ctx.fill();
-                    
-                    // Add star-like rays for extra sparkle
-                    if (intensity > 0.5) {
-                        ctx.strokeStyle = `rgba(255, 255, 255, ${intensity * 0.7})`;
-                        ctx.lineWidth = 0.5;
-                        ctx.beginPath();
-                        for (let i = 0; i < 4; i++) {
-                            const angle = (i * Math.PI) / 2 + sparkle.twinkle;
-                            const rayLength = size * 2;
-                            ctx.moveTo(
-                                sparkle.x + Math.cos(angle) * rayLength * 0.3,
-                                sparkle.y + Math.sin(angle) * rayLength * 0.3
-                            );
-                            ctx.lineTo(
-                                sparkle.x + Math.cos(angle) * rayLength,
-                                sparkle.y + Math.sin(angle) * rayLength
-                            );
-                        }
-                        ctx.stroke();
-                    }
-                    
-                    return true;
-                });
-                
-                if (hasActiveElements) {
-                    requestAnimationFrame(animateFrame);
-                } else {
-                    trailAnimationActive = false;
-                    // Clean up overlay
-                    if (overlayCanvas && overlayCanvas.parentNode) {
-                        overlayCanvas.parentNode.removeChild(overlayCanvas);
-                    }
-                    console.log('🌟 Animation completed, canvas cleaned up');
-                }
+                step++;
+            }, vibrationDuration / vibrationSteps);
+        }
+
+        let glowDecayInterval = null;
+        
+        function startGlowDecay() {
+            // Clear any existing interval
+            if (glowDecayInterval) {
+                clearInterval(glowDecayInterval);
             }
             
-            animateFrame();
+            glowDecayInterval = setInterval(() => {
+                let hasActiveGlows = false;
+                
+                for (const nodeId in nodeGlowLevels) {
+                    if (nodeGlowLevels[nodeId] > 0.001) {
+                        nodeGlowLevels[nodeId] *= 0.3; // Very fast decay
+                        updateNodeGlow(nodeId);
+                        hasActiveGlows = true;
+                    } else if (nodeGlowLevels[nodeId] > 0) {
+                        nodeGlowLevels[nodeId] = 0;
+                        const existingGlow = document.getElementById(`node-glow-${nodeId}`);
+                        if (existingGlow) {
+                            existingGlow.style.transition = 'opacity 0.2s ease-out';
+                            existingGlow.style.opacity = '0';
+                            setTimeout(() => existingGlow.remove(), 200);
+                        }
+                    }
+                }
+                
+                // Stop the interval if no active glows to save performance
+                if (!hasActiveGlows) {
+                    clearInterval(glowDecayInterval);
+                    glowDecayInterval = null;
+                }
+            }, 100); // Reduced frequency for better performance
+        }
+
+        function easeInOutCubic(t) {
+            return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+        }
+
+        function getCurvedPathPosition(fromPos, toPos, progress, fromId, toId) {
+            // Find the actual edge between these nodes
+            const edge = networkData.edges.find(e => 
+                (e.from === fromId && e.to === toId) || 
+                (e.from === toId && e.to === fromId)
+            );
+            
+            if (!edge) {
+                // If no edge found, use straight line
+                const currentX = fromPos.x + (toPos.x - fromPos.x) * progress;
+                const currentY = fromPos.y + (toPos.y - fromPos.y) * progress;
+                return { currentX, currentY };
+            }
+            
+            // Calculate distance and direction
+            const dx = toPos.x - fromPos.x;
+            const dy = toPos.y - fromPos.y;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            // Use the global edge configuration (curvedCW with roundness 0.25)
+            // For curvedCW (clockwise), the curve goes to the right when traveling from->to
+            let curveDirection = -1; // Flip to opposite direction
+            
+            // Determine if we're going from->to or to->from to maintain consistent curve direction
+            const isReversed = edge.from === toId;
+            if (isReversed) {
+                curveDirection = 1; // Reverse for opposite direction
+            }
+            
+            // Use the roundness value from global configuration (0.25 for curvedCW)
+            const roundness = 0.25;
+            const curveOffset = distance * roundness * curveDirection;
+            
+            // Calculate perpendicular vector (rotated 90 degrees)
+            const perpX = -dy / distance;
+            const perpY = dx / distance;
+            
+            // Calculate control point for quadratic bezier curve
+            const midX = (fromPos.x + toPos.x) / 2 + perpX * curveOffset;
+            const midY = (fromPos.y + toPos.y) / 2 + perpY * curveOffset;
+            
+            // Quadratic bezier curve calculation
+            const t = progress;
+            const currentX = (1 - t) * (1 - t) * fromPos.x + 
+                           2 * (1 - t) * t * midX + 
+                           t * t * toPos.x;
+            const currentY = (1 - t) * (1 - t) * fromPos.y + 
+                           2 * (1 - t) * t * midY + 
+                           t * t * toPos.y;
+            
+            return { currentX, currentY };
         }
 
         // Threshold slider handler
         document.getElementById('threshold-slider').addEventListener('input', function(e) {
-            const value = parseFloat(e.target.value);
-            document.getElementById('threshold-value').textContent = value;
+            currentThreshold = parseFloat(e.target.value);
+            document.getElementById('threshold-value').textContent = currentThreshold.toFixed(2);
             loadMemoryNetwork(); // Reload with new threshold
         });
 
@@ -1977,35 +2297,57 @@ def generate_openai_response_with_memory(message, conversation_history, use_memo
                     memory_manager.reload_from_disk()
                 except:
                     pass  # Don't fail if reload fails
-                search_results = memory_manager.search_memories(message, top_k=5, min_relevance=0.2)
+                search_results = memory_manager.search_memories(message, top_k=5, min_relevance=0.35)
                 memory_context = search_results
                 
-                # If no results from local search, try API search as backup
+                # If no results from local search, try API search as backup with filtering
                 if not search_results:
                     try:
                         api_response = requests.get(f'http://localhost:5000/search/{message}', timeout=5)
                         if api_response.status_code == 200:
                             api_results = api_response.json()
                             if api_results:
-                                print(f"   🔄 Found {len(api_results)} memories via API fallback")
-                                memory_context = api_results[:5]  # Limit to 5
+                                # Apply the same relevance filtering to API results
+                                filtered_api_results = []
+                                for result in api_results:
+                                    # Check if the result has the expected structure and score
+                                    if isinstance(result, dict):
+                                        score = result.get('relevance_score', result.get('final_score', 0))
+                                        if score >= 0.35:
+                                            filtered_api_results.append(result)
+                                
+                                if filtered_api_results:
+                                    print(f"   🔄 Found {len(filtered_api_results)} filtered memories via API fallback (from {len(api_results)} total)")
+                                    memory_context = filtered_api_results[:5]  # Limit to 5
+                                else:
+                                    print(f"   🔄 API returned {len(api_results)} memories but none met 0.35 threshold")
                     except Exception as e:
                         print(f"   ⚠️ API search fallback failed: {e}")
                 
-                print(f"📊 Found {len(search_results)} relevant memories:")
+                print(f"📊 Found {len(search_results)} relevant memories (min threshold: 0.35):")
                 for i, result in enumerate(search_results):
                     print(f"  {i+1}. '{result['memory']['content']}' (relevance: {result['relevance_score']:.3f}, final: {result['final_score']:.3f})")
                 
                 if search_results:
-                    memory_text = "USER MEMORIES (for context):\n"
-                    for result in search_results[:3]:  # Use top 3
-                        memory_text += f"- {result['memory']['content']} (relevance: {result['relevance_score']:.2f})\n"
-                        debug_memories.append(result['memory']['content'])
-                    memory_text += "\nUse these memories to personalize your response when relevant."
-                    messages[0]["content"] += memory_text
-                    print(f"💡 Injected {len(debug_memories)} memories into prompt")
+                    # Double-check filtering (defensive programming)
+                    filtered_results = [r for r in search_results if r.get('relevance_score', r.get('final_score', 0)) >= 0.35]
+                    if len(filtered_results) != len(search_results):
+                        print(f"🔧 Additional filtering applied: {len(search_results)} -> {len(filtered_results)} memories")
+                        search_results = filtered_results
+                        memory_context = filtered_results
+                    
+                    if filtered_results:
+                        memory_text = "USER MEMORIES (for context):\n"
+                        for result in filtered_results[:3]:  # Use top 3
+                            memory_text += f"- {result['memory']['content']} (relevance: {result['relevance_score']:.2f})\n"
+                            debug_memories.append(result['memory']['content'])
+                        memory_text += "\nUse these memories to personalize your response when relevant."
+                        messages[0]["content"] += memory_text
+                        print(f"💡 Injected {len(debug_memories)} memories into prompt")
+                    else:
+                        print("❌ No memories met the 0.35 relevance threshold after filtering")
                 else:
-                    print("❌ No memories met the relevance threshold")
+                    print("❌ No memories met the 0.35 relevance threshold")
                     
             except Exception as e:
                 print(f"❌ Memory search error: {e}")
