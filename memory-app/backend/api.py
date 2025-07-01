@@ -2,10 +2,15 @@ from flask import Flask, request, jsonify, send_from_directory
 from memory_manager import MemoryManager
 from flask_cors import CORS
 import os
+import threading
 
 app = Flask(__name__, static_folder='../frontend')
 CORS(app)  # This will enable CORS for all routes
 mm = MemoryManager()
+
+# Session memory queue for real-time updates
+session_new_memories = []
+session_new_memories_lock = threading.Lock()
 
 @app.route('/')
 def serve_index():
@@ -28,6 +33,20 @@ def handle_memories():
         method = data.get('method', 'tfidf') # Default to 'tfidf'
         
         new_mem = mm.add_memory(content, tags, method)
+        
+        # Add new memory to session queue for real-time network update
+        if new_mem:
+            memory_data = {
+                'id': new_mem['id'],
+                'content': new_mem['content'],
+                'score': new_mem.get('score', 0),
+                'tags': new_mem.get('tags', []),
+                'created': new_mem.get('created', '')
+            }
+            with session_new_memories_lock:
+                session_new_memories.append(memory_data)
+            print(f"🌐 Queued new memory for network: {memory_data['id']}")
+        
         return jsonify(new_mem), 201
     else: # GET
         return jsonify(mm.get_all_memories())
@@ -54,6 +73,18 @@ def set_model():
         return jsonify({'success': True, 'current': mm.get_current_model()})
     except Exception as e:
         return jsonify({'success': False, 'error': str(e)}), 400
+
+@app.route('/new-memories')
+def get_new_memories():
+    """Get and clear the queue of new memories for real-time network updates"""
+    with session_new_memories_lock:
+        new_memories = session_new_memories.copy()
+        session_new_memories.clear()
+    
+    return jsonify({
+        'memories': new_memories,
+        'count': len(new_memories)
+    })
 
 @app.route('/memory-network')
 def memory_network():

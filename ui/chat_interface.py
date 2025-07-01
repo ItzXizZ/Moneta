@@ -120,7 +120,109 @@ CHAT_INTERFACE_TEMPLATE = '''
             height: 100vh;
             padding: 0;
             margin: 0;
+            overflow: visible;
+            display: flex;
+            flex-direction: row;
+        }
+
+        .thread-sidebar {
+            width: 250px;
+            min-width: 12px;
+            max-width: 220px;
+            height: 100vh;
+            background: rgba(255,255,255,0.10);
+            backdrop-filter: blur(18px);
+            border-right: 1.5px solid rgba(255,255,255,0.18);
+            box-shadow: 2px 0 24px 0 rgba(168,85,247,0.08);
+            display: flex;
+            flex-direction: column;
+            align-items: stretch;
+            padding: 60px 0 18px 0;
+            z-index: 1100;
+            transition: transform 0.3s cubic-bezier(0.4,0,0.2,1);
+            position: relative;
+        }
+        .thread-sidebar.hidden {
+            transform: translateX(-100%);
+        }
+
+        .thread-list {
+            flex: 1;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            padding: 0 8px;
+            margin-top: 60px;
+        }
+
+        .thread-list-item {
+            min-width: 140px;
+            max-width: 200px;
+            background: rgba(168,85,247,0.10);
+            border: 1px solid rgba(168,85,247,0.18);
+            border-radius: 20px;
+            color: #fff;
+            padding: 10px 16px 10px 12px;
+            margin-bottom: 8px;
+            font-size: 0.95rem;
+            cursor: pointer;
+            transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+            box-shadow: 0 2px 8px rgba(168,85,247,0.06);
+            user-select: none;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            min-height: 40px;
+        }
+        .thread-list-item.active, .thread-list-item:hover {
+            background: rgba(168,85,247,0.18);
+            border-color: rgba(168,85,247,0.32);
+            color: #fff;
+            transform: scale(1.04);
+        }
+        
+        .thread-list-item .thread-title {
+            flex: 1;
+            text-align: left;
+            padding-right: 16px;
             overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+        
+        .thread-delete-btn {
+            background: rgba(239, 68, 68, 0.18);
+            border: none;
+            border-radius: 50%;
+            width: 32px;
+            height: 32px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 1.2rem;
+            color: #ef4444;
+            transition: all 0.2s cubic-bezier(0.4,0,0.2,1);
+            margin-left: 12px;
+            opacity: 0.7;
+            outline: none;
+        }
+        
+        .thread-list-item:hover .thread-delete-btn {
+            opacity: 1;
+            background: rgba(239, 68, 68, 0.28);
+            color: #fff;
+            box-shadow: 0 2px 8px rgba(239,68,68,0.12);
+        }
+        
+        .thread-delete-btn:hover, .thread-delete-btn:focus {
+            background: #ef4444;
+            color: #fff;
+            opacity: 1;
+            transform: scale(1.12);
+            box-shadow: 0 4px 16px rgba(239,68,68,0.18);
         }
 
         .main-content {
@@ -134,19 +236,21 @@ CHAT_INTERFACE_TEMPLATE = '''
         .chat-container {
             position: fixed;
             top: 20px;
-            left: 20px;
+            left: 250px;
             bottom: 20px;
-            width: 600px;
+            width: 500px;
             height: calc(100vh - 40px);
             display: flex;
             flex-direction: column;
             background: transparent;
             border: none;
             border-radius: 0;
-            overflow: visible;
+            overflow: hidden;
             box-shadow: none;
             pointer-events: auto;
             z-index: 1000;
+            transition: left 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s cubic-bezier(0.4,0,0.2,1);
+            margin-right: 12px;
         }
 
         .chat-header {
@@ -172,29 +276,46 @@ CHAT_INTERFACE_TEMPLATE = '''
         .chat-messages {
             flex: 1;
             overflow-y: auto;
+            overflow-x: hidden;
             padding: 10px;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            min-height: calc(100vh - 180px);
+            height: calc(100vh - 160px);
+            scroll-behavior: smooth;
+            -webkit-overflow-scrolling: touch;
+            scrollbar-width: thin;
+            scrollbar-color: rgba(255, 255, 255, 0.2) transparent;
         }
 
         .message {
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 20px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 20px 24px;
             max-width: 85%;
             position: relative;
             transition: all 0.4s var(--ease-smooth);
             box-shadow: 
-                0 12px 40px rgba(0, 0, 0, 0.4),
+                0 8px 32px rgba(0, 0, 0, 0.3),
                 0 0 0 1px rgba(255, 255, 255, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.15),
-                0 0 20px rgba(168, 85, 247, 0.08);
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                0 4px 16px rgba(168, 85, 247, 0.1);
             overflow: hidden;
-            margin: 10px 0;
+            margin: 15px 0;
+            opacity: 0;
+            transform: scale(0.8) translateY(20px);
+            animation: messagePopIn 0.3s ease-out forwards;
+            width: fit-content;
+        }
+
+        @keyframes messagePopIn {
+            0% {
+                opacity: 0;
+                transform: scale(0.8) translateY(20px);
+            }
+            100% {
+                opacity: 1;
+                transform: scale(1) translateY(0);
+            }
         }
 
         .message::before {
@@ -204,47 +325,55 @@ CHAT_INTERFACE_TEMPLATE = '''
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, transparent 50%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 50%, transparent 100%);
             pointer-events: none;
-            border-radius: 16px;
+            border-radius: 20px;
         }
 
         .message:hover {
-            transform: translateY(-4px) scale(1.01);
+            transform: translateY(-2px) scale(1.02);
             box-shadow: 
-                0 20px 60px rgba(0, 0, 0, 0.5),
-                0 0 0 1px rgba(255, 255, 255, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2),
-                0 0 40px rgba(168, 85, 247, 0.15);
-            border-color: var(--glass-border-strong);
+                0 12px 48px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(255, 255, 255, 0.25),
+                inset 0 1px 0 rgba(255, 255, 255, 0.3),
+                0 8px 32px rgba(168, 85, 247, 0.2);
+            border-color: rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(24px);
         }
 
         .message.user {
-            align-self: flex-end;
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.2), rgba(147, 51, 234, 0.15));
-            border-color: rgba(168, 85, 247, 0.4);
+            float: right;
+            clear: both;
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.15), rgba(147, 51, 234, 0.1));
+            backdrop-filter: blur(20px);
+            border-color: rgba(168, 85, 247, 0.3);
             box-shadow: 
-                0 12px 40px rgba(0, 0, 0, 0.4),
-                0 0 0 1px rgba(168, 85, 247, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2),
-                0 0 30px rgba(168, 85, 247, 0.2);
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                0 0 0 1px rgba(168, 85, 247, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.25),
+                0 4px 20px rgba(168, 85, 247, 0.15);
+            animation: messagePopIn 0.2s ease-out forwards;
         }
 
         .message.user::before {
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.15) 0%, transparent 50%);
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 50%, transparent 100%);
         }
 
         .message.user:hover {
             box-shadow: 
-                0 20px 60px rgba(0, 0, 0, 0.5),
-                0 0 0 1px rgba(168, 85, 247, 0.5),
-                inset 0 1px 0 rgba(255, 255, 255, 0.25),
-                0 0 50px rgba(168, 85, 247, 0.4);
+                0 12px 48px rgba(0, 0, 0, 0.4),
+                0 0 0 1px rgba(168, 85, 247, 0.4),
+                inset 0 1px 0 rgba(255, 255, 255, 0.35),
+                0 8px 40px rgba(168, 85, 247, 0.3);
+            border-color: rgba(168, 85, 247, 0.5);
         }
 
         .message.assistant {
-            align-self: flex-start;
-            background: var(--glass-bg);
+            float: left;
+            clear: both;
+            background: rgba(255, 255, 255, 0.08);
+            animation: messagePopIn 0.3s ease-out forwards;
+            animation-delay: 0.1s;
         }
 
         .message-content {
@@ -261,28 +390,82 @@ CHAT_INTERFACE_TEMPLATE = '''
         }
 
         .memories-injected-box {
-            background: linear-gradient(45deg, var(--primary-900), var(--primary-800));
-            border: 1px solid var(--primary-600);
-            border-radius: 8px;
-            padding: 10px;
-            margin-top: 10px;
+            background: rgba(168, 85, 247, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(168, 85, 247, 0.2);
+            border-radius: 16px;
+            margin-top: 12px;
             font-size: 0.85rem;
             color: var(--primary-200);
+            overflow: hidden;
+            transition: all 0.3s var(--ease-smooth);
+            box-shadow: 
+                0 4px 16px rgba(168, 85, 247, 0.1),
+                0 0 0 1px rgba(168, 85, 247, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.1);
         }
 
-        .memories-injected-box h4 {
-            margin: 0 0 8px 0;
+        .memories-injected-header {
+            padding: 12px 16px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid rgba(168, 85, 247, 0.15);
+            transition: all 0.3s var(--ease-smooth);
+            backdrop-filter: blur(20px);
+        }
+
+        .memories-injected-header:hover {
+            background: rgba(168, 85, 247, 0.08);
+            border-bottom-color: rgba(168, 85, 247, 0.25);
+        }
+
+        .memories-injected-header h4 {
+            margin: 0;
             color: var(--primary-300);
             font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .memories-injected-toggle {
+            color: var(--primary-400);
+            font-size: 0.8rem;
+            transition: transform 0.3s var(--ease-smooth);
+        }
+
+        .memories-injected-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s var(--ease-smooth);
+        }
+
+        .memories-injected-content.expanded {
+            max-height: 300px;
+            padding: 10px;
         }
 
         .memories-injected-item {
-            background: rgba(168, 85, 247, 0.1);
-            border-left: 3px solid var(--primary-500);
-            padding: 8px 12px;
-            margin: 5px 0;
-            border-radius: 4px;
+            background: rgba(168, 85, 247, 0.06);
+            backdrop-filter: blur(16px);
+            border-left: 3px solid rgba(168, 85, 247, 0.4);
+            border-radius: 8px;
+            padding: 10px 14px;
+            margin: 8px 0;
             font-size: 0.8rem;
+            line-height: 1.4;
+            box-shadow: 
+                0 2px 8px rgba(168, 85, 247, 0.05),
+                inset 0 1px 0 rgba(255, 255, 255, 0.05);
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .memories-injected-item:hover {
+            background: rgba(168, 85, 247, 0.1);
+            border-left-color: rgba(168, 85, 247, 0.6);
+            transform: translateX(2px);
         }
 
         .memories-injected-score {
@@ -292,24 +475,33 @@ CHAT_INTERFACE_TEMPLATE = '''
         }
 
         .chat-input-container {
-            padding: 10px 0;
+            padding: 5px 16px 10px 0;
             border-top: none;
             background: transparent;
             backdrop-filter: none;
+            width:92%
             margin-top: auto;
+            flex-shrink: 0;
+            position: sticky;
+            bottom: 0;
+            z-index: 100;
         }
 
         .chat-input-form {
             display: flex;
             gap: 12px;
+            padding-right: 16px;
+            justify-content: center;
         }
 
         .chat-input {
-            flex: 1;
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
+            width: 75%;
+            flex: none;
+            max-width: 420px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
             padding: 18px 24px;
             color: rgba(255, 255, 255, 0.95);
             font-size: 1rem;
@@ -320,11 +512,10 @@ CHAT_INTERFACE_TEMPLATE = '''
             font-family: inherit;
             line-height: 1.5;
             box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.4),
+                0 4px 16px rgba(0, 0, 0, 0.2),
                 0 0 0 1px rgba(255, 255, 255, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.15),
-                inset 0 2px 8px rgba(0, 0, 0, 0.15),
-                0 0 20px rgba(168, 85, 247, 0.08);
+                inset 0 1px 0 rgba(255, 255, 255, 0.2),
+                inset 0 2px 8px rgba(0, 0, 0, 0.1);
         }
 
         .chat-input::placeholder {
@@ -333,37 +524,39 @@ CHAT_INTERFACE_TEMPLATE = '''
 
         .chat-input:focus {
             outline: none;
-            border-color: var(--glass-border-strong);
+            border-color: rgba(168, 85, 247, 0.4);
             box-shadow: 
-                0 12px 48px rgba(0, 0, 0, 0.5),
-                0 0 0 3px rgba(168, 85, 247, 0.2),
+                0 8px 32px rgba(0, 0, 0, 0.3),
+                0 0 0 2px rgba(168, 85, 247, 0.2),
                 0 0 0 1px rgba(168, 85, 247, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2),
-                inset 0 2px 8px rgba(0, 0, 0, 0.2),
-                0 0 40px rgba(168, 85, 247, 0.25);
-            background: var(--glass-bg-strong);
-            transform: translateY(-2px) scale(1.01);
+                inset 0 1px 0 rgba(255, 255, 255, 0.25),
+                inset 0 2px 8px rgba(0, 0, 0, 0.15);
+            background: rgba(255, 255, 255, 0.12);
+            transform: translateY(-1px) scale(1.01);
+            backdrop-filter: blur(24px);
         }
 
         .send-button {
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur-strong);
-            border: 1px solid var(--glass-border);
-            border-radius: 16px;
-            padding: 18px 28px;
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            padding: 18px 20px;
             color: rgba(255, 255, 255, 0.9);
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             font-weight: 500;
             cursor: pointer;
             transition: all 0.4s var(--ease-smooth);
             box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.4),
+                0 4px 16px rgba(0, 0, 0, 0.2),
                 0 0 0 1px rgba(255, 255, 255, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.15),
-                0 0 20px rgba(168, 85, 247, 0.1);
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
             position: relative;
             overflow: hidden;
             white-space: nowrap;
+            max-width: 8vw;
+            min-width: 70px;
+            flex-shrink: 0;
         }
 
         .send-button::before {
@@ -373,22 +566,23 @@ CHAT_INTERFACE_TEMPLATE = '''
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, transparent 50%);
+            background: linear-gradient(135deg, rgba(168, 85, 247, 0.1) 0%, rgba(168, 85, 247, 0.05) 50%, transparent 100%);
             opacity: 0;
             transition: opacity 0.4s var(--ease-smooth);
             pointer-events: none;
+            border-radius: 20px;
         }
 
         .send-button:hover {
-            background: var(--glass-bg-strong);
-            border-color: var(--glass-border-strong);
+            background: rgba(168, 85, 247, 0.12);
+            border-color: rgba(168, 85, 247, 0.3);
             color: rgba(255, 255, 255, 1);
-            transform: translateY(-4px) scale(1.02);
+            transform: translateY(-2px) scale(1.02);
             box-shadow: 
-                0 16px 48px rgba(168, 85, 247, 0.4),
-                0 0 0 1px rgba(168, 85, 247, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.25),
-                0 0 40px rgba(168, 85, 247, 0.3);
+                0 8px 32px rgba(168, 85, 247, 0.3),
+                0 0 0 1px rgba(168, 85, 247, 0.2),
+                inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(24px);
         }
 
         .send-button:hover::before {
@@ -405,7 +599,7 @@ CHAT_INTERFACE_TEMPLATE = '''
             left: 50%;
             transform: translateX(-50%);
             display: flex;
-            gap: 16px;
+            gap: 12px;
             flex-wrap: wrap;
             background: transparent;
             border: none;
@@ -417,53 +611,55 @@ CHAT_INTERFACE_TEMPLATE = '''
             z-index: 1000;
         }
 
-        .new-thread-btn, .clear-thread-btn, .end-thread-btn, .memory-toggle-btn {
-            background: var(--glass-bg);
-            backdrop-filter: var(--glass-blur-strong);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 12px 20px;
+        .new-thread-btn, .end-thread-btn {
+            background: rgba(255, 255, 255, 0.08);
+            backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: 16px;
+            padding: 10px 18px;
             color: rgba(255, 255, 255, 0.9);
             font-weight: 500;
-            font-size: 0.875rem;
+            font-size: 0.8rem;
             cursor: pointer;
             transition: all 0.4s var(--ease-smooth);
             box-shadow: 
-                0 8px 32px rgba(0, 0, 0, 0.4),
+                0 4px 16px rgba(0, 0, 0, 0.2),
                 0 0 0 1px rgba(255, 255, 255, 0.1),
-                inset 0 1px 0 rgba(255, 255, 255, 0.15),
-                0 0 20px rgba(168, 85, 247, 0.1);
+                inset 0 1px 0 rgba(255, 255, 255, 0.2);
             position: relative;
             overflow: hidden;
             white-space: nowrap;
+            max-width: 7vw;
+            min-width: 70px;
         }
 
-        .new-thread-btn::before, .clear-thread-btn::before, .end-thread-btn::before, .memory-toggle-btn::before {
+        .new-thread-btn::before, .end-thread-btn::before {
             content: '';
             position: absolute;
             top: 0;
             left: 0;
             right: 0;
             bottom: 0;
-            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+            background: linear-gradient(135deg, rgba(255, 255, 255, 0.1) 0%, rgba(255, 255, 255, 0.05) 50%, transparent 100%);
             opacity: 0;
             transition: opacity 0.4s var(--ease-smooth);
             pointer-events: none;
+            border-radius: 16px;
         }
 
-        .new-thread-btn:hover, .clear-thread-btn:hover, .end-thread-btn:hover, .memory-toggle-btn:hover {
-            background: var(--glass-bg-strong);
-            border-color: var(--glass-border-strong);
+        .new-thread-btn:hover, .end-thread-btn:hover {
+            background: rgba(255, 255, 255, 0.12);
+            border-color: rgba(255, 255, 255, 0.3);
             color: rgba(255, 255, 255, 1);
-            transform: translateY(-4px) scale(1.02);
+            transform: translateY(-2px) scale(1.02);
             box-shadow: 
-                0 16px 48px rgba(0, 0, 0, 0.5),
+                0 8px 32px rgba(0, 0, 0, 0.3),
                 0 0 0 1px rgba(255, 255, 255, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.25),
-                0 0 40px rgba(168, 85, 247, 0.3);
+                inset 0 1px 0 rgba(255, 255, 255, 0.25);
+            backdrop-filter: blur(24px);
         }
 
-        .new-thread-btn:hover::before, .clear-thread-btn:hover::before, .end-thread-btn:hover::before, .memory-toggle-btn:hover::before {
+        .new-thread-btn:hover::before, .end-thread-btn:hover::before {
             opacity: 1;
         }
 
@@ -474,75 +670,13 @@ CHAT_INTERFACE_TEMPLATE = '''
                 inset 0 1px 0 rgba(255, 255, 255, 0.2);
         }
 
-        .clear-thread-btn:hover {
-            box-shadow: 
-                0 8px 24px rgba(239, 68, 68, 0.3),
-                0 0 0 1px rgba(239, 68, 68, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            color: #fca5a5;
-        }
-
-        .end-thread-btn:hover {
-            box-shadow: 
-                0 8px 24px rgba(34, 197, 94, 0.3),
-                0 0 0 1px rgba(34, 197, 94, 0.2),
-                inset 0 1px 0 rgba(255, 255, 255, 0.2);
-            color: #86efac;
-        }
-
-        .memory-toggle-btn.active {
-            background: var(--glass-bg-strong);
-            border-color: rgba(34, 197, 94, 0.4);
-            color: #86efac;
-            box-shadow: 
-                0 4px 16px rgba(34, 197, 94, 0.2),
-                0 0 0 1px rgba(34, 197, 94, 0.3),
-                inset 0 1px 0 rgba(255, 255, 255, 0.15);
-        }
-
-        .memory-toggle-btn.disabled {
-            background: var(--glass-bg-subtle);
-            border-color: rgba(255, 255, 255, 0.1);
-            cursor: not-allowed;
-            opacity: 0.5;
-            color: rgba(255, 255, 255, 0.4);
-        }
-
         .empty-state {
             text-align: center;
             color: var(--gray-400);
             font-style: italic;
-            margin: auto;
             padding: 40px;
-        }
-
-        .typing-indicator {
-            display: none;
-            align-self: flex-start;
-            background: var(--glass-bg);
-            border: 1px solid var(--glass-border);
-            border-radius: 12px;
-            padding: 15px;
-            color: var(--gray-400);
-        }
-
-        .typing-indicator.show {
-            display: block;
-        }
-
-        .searching-memories-indicator {
-            display: none;
-            align-self: flex-start;
-            background: var(--glass-bg);
-            border: 1px solid var(--primary-400);
-            border-radius: 12px;
-            padding: 15px;
-            color: var(--primary-400);
-            margin-bottom: 10px;
-        }
-
-        .searching-memories-indicator.show {
-            display: block;
+            clear: both;
+            width: 100%;
         }
 
         @media (max-width: 1200px) {
@@ -566,7 +700,7 @@ CHAT_INTERFACE_TEMPLATE = '''
             }
             
             .chat-messages {
-                min-height: calc(100vh - 160px);
+                min-height: 0;
             }
         }
 
@@ -590,8 +724,16 @@ CHAT_INTERFACE_TEMPLATE = '''
                 gap: 8px;
             }
             
+            .new-thread-btn, .end-thread-btn {
+                max-width: none;
+                min-width: 80px;
+                padding: 8px 12px;
+                font-size: 0.75rem;
+            }
+            
             .chat-messages {
-                min-height: calc(100vh - 200px);
+                min-height: 0;
+                max-height: calc(100vh - 180px);
             }
             
             .message {
@@ -599,46 +741,112 @@ CHAT_INTERFACE_TEMPLATE = '''
             }
             
             .chat-input-form {
-                flex-direction: column;
+                flex-direction: row;
                 gap: 8px;
             }
             
             .send-button {
-                width: 100%;
+                max-width: none;
+                min-width: 60px;
+                padding: 18px 16px;
             }
+        }
+
+        .chat-messages::after {
+            content: "";
+            display: table;
+            clear: both;
+        }
+
+        .sidebar-toggle-btn {
+            position: fixed;
+            top: 24px;
+            left: 18px;
+            z-index: 1200;
+            width: 36px;
+            height: 36px;
+            background: rgba(255,255,255,0.13);
+            border: 1.5px solid rgba(255,255,255,0.18);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(168,85,247,0.10);
+            transition: background 0.2s, box-shadow 0.2s;
+        }
+        .sidebar-toggle-btn:hover {
+            background: rgba(168,85,247,0.18);
+            box-shadow: 0 4px 16px rgba(168,85,247,0.18);
+        }
+        .sidebar-toggle-btn .bar {
+            width: 20px;
+            height: 3px;
+            background: #fff;
+            margin: 2.5px 0;
+            border-radius: 2px;
+            transition: all 0.3s;
+        }
+
+        .container.sidebar-hidden .chat-container {
+            left: 8px !important;
+            margin-right: 12px;
+            /* width: 100vw !important; */
+            transition: left 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+        .chat-container {
+            transition: left 0.3s cubic-bezier(0.4,0,0.2,1), width 0.3s cubic-bezier(0.4,0,0.2,1);
+        }
+
+        /* If your icon is in a container, e.g. .sidebar-icon, add: */
+        .sidebar-icon {
+            margin-bottom: 24px;
+        }
+
+        .thread-list-item:first-child {
+            margin-top: 10px;
+        }
+
+        .sidebar-controls {
+            position: absolute;
+            left: 0;
+            right: 0;
+            bottom: 18px;
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            padding: 0 12px;
+            z-index: 1201;
+        }
+        .thread-sidebar.hidden .sidebar-controls {
+            display: none;
         }
     </style>
 </head>
 <body>
+    <div class="sidebar-toggle-btn" id="sidebar-toggle-btn" onclick="toggleSidebar()">
+        <div class="bar"></div>
+        <div class="bar"></div>
+        <div class="bar"></div>
+    </div>
     <div class="container">
-        <div class="thread-controls">
-            <button class="new-thread-btn" onclick="newThread()">New</button>
-            <button class="clear-thread-btn" onclick="clearThread()">Clear</button>
-            <button class="end-thread-btn" onclick="endThread()">💾 Save</button>
-            <button class="memory-toggle-btn" id="memory-toggle" onclick="toggleMemorySearch()">
-                <span id="memory-toggle-text">✅ Memory Search ALWAYS ON</span>
-            </button>
+        <div class="thread-sidebar" id="thread-sidebar">
+            <!-- Thread list will be populated here -->
+            <div class="sidebar-controls">
+                <button class="new-thread-btn" onclick="newThread()">New</button>
+                <button class="end-thread-btn" onclick="endThread()">💾 Save</button>
+            </div>
         </div>
-        
         <div class="main-content">
             <!-- Chat Section -->
             <div class="chat-container">
                 <div class="chat-header">
                     <h2 id="thread-title">Conversation</h2>
                 </div>
-                
                 <div class="chat-messages" id="chat-messages">
                     <div class="empty-state">
                         Start a conversation...
                     </div>
-                </div>
-                
-                <div class="searching-memories-indicator" id="searching-memories-indicator">
-                    🔎 Searching memories...
-                </div>
-                
-                <div class="typing-indicator" id="typing-indicator">
-                    Assistant is typing...
                 </div>
                 
                 <div class="chat-input-container">

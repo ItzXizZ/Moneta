@@ -4,6 +4,14 @@ let memoryNetworkDiv = null;
 let currentThreshold = 0.35;
 let isMapMode = false;
 
+// Session memory store for real-time updates
+let sessionMemories = [];
+let sessionMemoryIds = new Set();
+let newMemoryPollingInterval = null;
+let savedNodePositions = {};
+
+let suppressMemoryNotifications = false;
+
 // --- Render Memories List ---
 async function renderMemories() {
     try {
@@ -139,15 +147,24 @@ function setupSettings() {
     // Threshold slider
     const thresholdSlider = document.getElementById('threshold-slider');
     const thresholdValue = document.getElementById('threshold-value');
-    
+    let thresholdDebounce;
     if (thresholdSlider && thresholdValue) {
         thresholdSlider.addEventListener('input', (e) => {
-            currentThreshold = parseFloat(e.target.value);
+            // Snap to nearest 0.05
+            let snapped = Math.round(parseFloat(e.target.value) / 0.05) * 0.05;
+            snapped = Math.max(0, Math.min(1, snapped));
+            thresholdSlider.value = snapped;
+            currentThreshold = snapped;
             thresholdValue.textContent = currentThreshold.toFixed(2);
-            
-            // Re-render network if in map mode
+            // Debounce re-render
             if (isMapMode && memoryNetworkDiv) {
-                renderMemoryNetwork();
+                suppressMemoryNotifications = true;
+                clearTimeout(thresholdDebounce);
+                thresholdDebounce = setTimeout(() => {
+                    renderMemoryNetwork().then(() => {
+                        suppressMemoryNotifications = false;
+                    });
+                }, 100);
             }
         });
     }
@@ -508,6 +525,218 @@ async function renderMemoryNetwork() {
     }
 }
 
+// --- Session-based memory management for real-time updates ---
+async function addMemoryToSession(memoryData) {
+    console.log('✨ Adding new memory to session:', memoryData.content.substring(0, 50) + '...');
+    
+    // Avoid duplicates
+    if (sessionMemoryIds.has(memoryData.id)) {
+        console.log('Memory already in session, skipping');
+        return;
+    }
+    
+    // Add to session store
+    sessionMemories.push(memoryData);
+    sessionMemoryIds.add(memoryData.id);
+    
+    // If we're in map mode, add to network
+    if (isMapMode && network) {
+        addMemoryToNetworkRealtime(memoryData);
+    } else {
+        // If we're in list mode, refresh the memories list
+        await renderMemories();
+    }
+}
+
+function addMemoryToNetworkRealtime(memoryData) {
+    if (!network) {
+        console.warn('Network not initialized, cannot add memory');
+        return;
+    }
+    
+    console.log('🚀 Adding memory to network in real-time:', memoryData.content.substring(0, 30) + '...');
+    
+    const nodes = network.body.data.nodes;
+    const edges = network.body.data.edges;
+    
+    // Create new node
+    const baseSize = 60;
+    const scoreMultiplier = Math.max(1, memoryData.score * 20);
+    const nodeSize = Math.min(baseSize + scoreMultiplier, 150);
+    
+    const newNode = {
+        id: memoryData.id,
+        label: memoryData.content.length > 40 ? memoryData.content.substring(0, 40) + '...' : memoryData.content,
+        title: `${memoryData.content}\\n\\nScore: ${memoryData.score.toFixed(2)}`,
+        size: nodeSize,
+        color: {
+            background: '#8b5cf6',
+            border: '#a855f7',
+            highlight: {
+                background: '#a78bfa',
+                border: '#c084fc'
+            }
+        },
+        font: {
+            color: 'white',
+            size: 14,
+            face: 'Inter, sans-serif'
+        },
+        shadow: {
+            enabled: true,
+            color: 'rgba(139, 92, 246, 0.3)',
+            size: 15,
+            x: 0,
+            y: 0
+        },
+        score: memoryData.score
+    };
+    
+    // Add the new node
+    nodes.add(newNode);
+    
+    // Calculate similarities with existing nodes for edges
+    const existingNodes = nodes.get();
+    const newEdges = [];
+    const threshold = currentThreshold;
+    
+    existingNodes.forEach(existingNode => {
+        if (existingNode.id !== memoryData.id) {
+            const similarity = calculateSimpleSimilarity(memoryData.content, existingNode.title.split('\\n')[0]);
+            if (similarity > threshold) {
+                newEdges.push({
+                    id: `${memoryData.id}-${existingNode.id}`,
+                    from: memoryData.id,
+                    to: existingNode.id,
+                    value: similarity,
+                    width: 2 + 12 * similarity,
+                    color: {
+                        color: `rgba(168,85,247,${Math.max(0.2, similarity * 0.8)})`,
+                        highlight: 'rgba(255,215,0,1)',
+                        hover: 'rgba(255,215,0,0.8)'
+                    },
+                    title: `Similarity: ${similarity.toFixed(3)}`
+                });
+            }
+        }
+    });
+    
+    // Add new edges
+    if (newEdges.length > 0) {
+        edges.add(newEdges);
+    }
+    
+    console.log(`🎯 Added memory with ${newEdges.length} connections`);
+    
+    // Show notification
+    if (!suppressMemoryNotifications) {
+        showNewMemoryNotification(memoryData.content);
+    }
+}
+
+// Simple similarity calculation
+function calculateSimpleSimilarity(text1, text2) {
+    const words1 = text1.toLowerCase().split(/\\s+/);
+    const words2 = text2.toLowerCase().split(/\\s+/);
+    
+    const freq1 = {};
+    const freq2 = {};
+    
+    words1.forEach(word => freq1[word] = (freq1[word] || 0) + 1);
+    words2.forEach(word => freq2[word] = (freq2[word] || 0) + 1);
+    
+    let dotProduct = 0;
+    let magnitude1 = 0;
+    let magnitude2 = 0;
+    
+    const allWords = new Set([...words1, ...words2]);
+    
+    allWords.forEach(word => {
+        const f1 = freq1[word] || 0;
+        const f2 = freq2[word] || 0;
+        
+        dotProduct += f1 * f2;
+        magnitude1 += f1 * f1;
+        magnitude2 += f2 * f2;
+    });
+    
+    if (magnitude1 === 0 || magnitude2 === 0) return 0;
+    return dotProduct / (Math.sqrt(magnitude1) * Math.sqrt(magnitude2));
+}
+
+// Show notification for new memory
+function showNewMemoryNotification(memoryText) {
+    const notification = document.createElement('div');
+    notification.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: rgba(139, 92, 246, 0.9);
+        color: white;
+        padding: 12px 20px;
+        border-radius: 8px;
+        font-size: 14px;
+        font-weight: 500;
+        z-index: 1000;
+        box-shadow: 0 4px 12px rgba(139, 92, 246, 0.3);
+        backdrop-filter: blur(10px);
+        transform: translateX(100%);
+        transition: transform 0.3s ease;
+    `;
+    notification.textContent = `New memory: ${memoryText.substring(0, 50)}${memoryText.length > 50 ? '...' : ''}`;
+    
+    document.body.appendChild(notification);
+    
+    // Animate in
+    setTimeout(() => {
+        notification.style.transform = 'translateX(0)';
+    }, 100);
+    
+    // Animate out and remove
+    setTimeout(() => {
+        notification.style.transform = 'translateX(100%)';
+        setTimeout(() => notification.remove(), 300);
+    }, 3000);
+}
+
+// Polling system for new memories
+function startNewMemoryPolling() {
+    if (newMemoryPollingInterval) {
+        clearInterval(newMemoryPollingInterval);
+    }
+    
+    newMemoryPollingInterval = setInterval(checkForNewMemories, 2000);
+    console.log('📡 Started polling for new memories');
+}
+
+function stopNewMemoryPolling() {
+    if (newMemoryPollingInterval) {
+        clearInterval(newMemoryPollingInterval);
+        newMemoryPollingInterval = null;
+        console.log('⏸️ Stopped polling for new memories');
+    }
+}
+
+async function checkForNewMemories() {
+    try {
+        const data = await apiCall('/new-memories');
+        
+        if (data && data.memories && data.memories.length > 0) {
+            console.log(`🔔 Found ${data.memories.length} new memories!`);
+            
+            // Add each new memory to the session
+            for (const memoryData of data.memories) {
+                await addMemoryToSession(memoryData);
+            }
+        }
+    } catch (error) {
+        // Silently handle errors to avoid spamming console
+        if (error.message && !error.message.includes('fetch')) {
+            console.warn('Error checking for new memories:', error);
+        }
+    }
+}
+
 // --- API Call Helper ---
 async function apiCall(url, options = {}) {
     try {
@@ -532,6 +761,9 @@ async function apiCall(url, options = {}) {
 document.addEventListener('DOMContentLoaded', () => {
     // Initialize memories list
     renderMemories();
+    
+    // Start polling for new memories
+    startNewMemoryPolling();
     
     // Setup search functionality
     setupSearch();

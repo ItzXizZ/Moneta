@@ -289,8 +289,10 @@
                 <button onclick="clearNetwork()">🧹 Clear Network</button>
                 <button onclick="resetPhysics()">⚡ Reset Physics</button>
                 <button onclick="togglePhysics()">🔄 Toggle Physics</button>
-            <button onclick="spreadNodes()">📐 Spread Nodes</button>
-            <button onclick="debugNetwork()">🔍 Debug Size</button>
+                <button onclick="spreadNodes()">📐 Spread Nodes</button>
+                <button onclick="debugNetwork()">🔍 Debug Size</button>
+                <button onclick="refreshMemoryNetworkManual()">🔄 Manual Refresh</button>
+                <button onclick="toggleAutoRefresh()" id="auto-refresh-toggle">Enable Auto-refresh</button>
             </div>
             
             <div class="memory-network-container">
@@ -331,12 +333,21 @@
             let activeMemories = new Set();
             let currentThreshold = 0.35;
             
-                    // Advanced Signal Trail System for Neural-like Visualization
-        let signalTrails = [];
-        let sparkleSystem = [];
-        let trailAnimationActive = false;
-        let nodeGlowLevels = {}; // Track accumulating glow for each node
-        let activeSignals = 0;
+            // Position persistence and incremental updates
+            let savedNodePositions = {};
+            let lastNetworkHash = '';
+            let isInitialLoad = true;
+            
+            // Auto-refresh control
+            let autoRefreshEnabled = false;
+            let autoRefreshInterval = null;
+            
+            // Advanced Signal Trail System for Neural-like Visualization
+            let signalTrails = [];
+            let sparkleSystem = [];
+            let trailAnimationActive = false;
+            let nodeGlowLevels = {}; // Track accumulating glow for each node
+            let activeSignals = 0;
 
             // Sample memory data for testing
             const sampleMemories = [
@@ -1367,6 +1378,36 @@
             );
         }
 
+        // Manual refresh button handler
+        function refreshMemoryNetworkManual() {
+            console.log('🔄 Manual refresh triggered');
+            loadSampleData();
+        }
+
+        // Auto-refresh toggle functionality
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = !autoRefreshEnabled;
+            
+            if (autoRefreshEnabled) {
+                autoRefreshInterval = setInterval(loadSampleData, 30000);
+                console.log('🔄 Auto-refresh enabled (30s interval)');
+                
+                // Update button text
+                const button = document.getElementById('auto-refresh-toggle');
+                if (button) button.textContent = 'Disable Auto-refresh';
+            } else {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+                console.log('⏸️ Auto-refresh disabled');
+                
+                // Update button text
+                const button = document.getElementById('auto-refresh-toggle');
+                if (button) button.textContent = 'Enable Auto-refresh';
+            }
+        }
+
             // Threshold slider handler
             document.getElementById('threshold-slider').addEventListener('input', function(e) {
                 currentThreshold = parseFloat(e.target.value);
@@ -1380,7 +1421,9 @@
                 loadSampleData();
                 
                 console.log('🎉 Memory Network Visualization Ready!');
-                console.log('Click "Simulate Memory Recall" to see the beautiful neural animations!');
+                console.log('✨ Auto-refresh disabled by default for persistent node positions.');
+                console.log('💡 Use "Manual Refresh" or "Enable Auto-refresh" as needed.');
+                console.log('🔥 Click "Simulate Memory Recall" to see the beautiful neural animations!');
             });
         </script>
     </body>

@@ -30,6 +30,10 @@ except ImportError as e:
     memory_manager = None
     MEMORY_AVAILABLE = False
 
+# Session memory queue for real-time updates
+session_new_memories = []
+session_new_memories_lock = threading.Lock()
+
 app = Flask(__name__)
 
 # Initialize OpenAI client with API key from environment
@@ -199,6 +203,8 @@ HTML_TEMPLATE = '''
             display: flex;
             flex-direction: column;
             gap: 15px;
+            min-height: 400px;
+            max-height: calc(100vh - 200px);
         }
 
         .message {
@@ -247,16 +253,51 @@ HTML_TEMPLATE = '''
             background: linear-gradient(45deg, var(--primary-800), var(--primary-900));
             border: 1px solid var(--primary-600);
             border-radius: 8px;
-            padding: 10px;
             margin-top: 10px;
             font-size: 0.85rem;
             color: var(--primary-200);
+            overflow: hidden;
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .memory-context-header {
+            padding: 10px 15px;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--primary-600);
+            transition: all 0.3s var(--ease-smooth);
+        }
+
+        .memory-context-header:hover {
+            background: rgba(168, 85, 247, 0.1);
         }
 
         .memory-context h4 {
-            margin: 0 0 8px 0;
+            margin: 0;
             color: var(--primary-300);
             font-size: 0.9rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .memory-context-toggle {
+            color: var(--primary-400);
+            font-size: 0.8rem;
+            transition: transform 0.3s var(--ease-smooth);
+        }
+
+        .memory-context-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s var(--ease-smooth);
+        }
+
+        .memory-context-content.expanded {
+            max-height: 300px;
+            padding: 10px;
         }
 
         .memory-item {
@@ -266,6 +307,7 @@ HTML_TEMPLATE = '''
             margin: 5px 0;
             border-radius: 4px;
             font-size: 0.8rem;
+            line-height: 1.4;
         }
 
         .memory-score {
@@ -278,6 +320,10 @@ HTML_TEMPLATE = '''
             padding: 20px;
             border-top: 1px solid var(--glass-border);
             background: var(--glass-bg);
+            flex-shrink: 0;
+            position: sticky;
+            bottom: 0;
+            z-index: 100;
         }
 
         .chat-input-form {
@@ -968,17 +1014,22 @@ HTML_TEMPLATE = '''
             const now = new Date();
             const timeString = now.toLocaleTimeString();
             
-            // Build memories injected HTML
-            let memoriesHtml = '<div class="memories-injected-box">';
-            memoriesHtml += '<h4>🧠 Memories Injected:</h4>';
+            // Build memories injected HTML with collapsible design
+            const memoryId = 'memory-' + Date.now();
+            let memoriesHtml = '<div class="memory-context">';
+            memoriesHtml += `<div class="memory-context-header" onclick="toggleMemoryContext('${memoryId}')">`;
+            memoriesHtml += '<h4>🧠 Memories Injected <span class="memory-count">(' + (memoryContext ? memoryContext.length : 0) + ')</span></h4>';
+            memoriesHtml += '<span class="memory-context-toggle" id="toggle-' + memoryId + '">▼ Click to view</span>';
+            memoriesHtml += '</div>';
+            memoriesHtml += `<div class="memory-context-content" id="${memoryId}">`;
             if (memoryContext && memoryContext.length > 0) {
                 memoryContext.forEach(memory => {
-                    memoriesHtml += `<div class="memories-injected-item">${memory.memory.content}<span class="memories-injected-score">(Score: ${memory.relevance_score.toFixed(2)})</span></div>`;
+                    memoriesHtml += `<div class="memory-item">${memory.memory.content}<span class="memory-score">(Score: ${memory.relevance_score.toFixed(2)})</span></div>`;
                 });
             } else {
-                memoriesHtml += '<div class="memories-injected-item">No relevant memories were injected for this prompt.</div>';
+                memoriesHtml += '<div class="memory-item">No relevant memories were injected for this prompt.</div>';
             }
-            memoriesHtml += '</div>';
+            memoriesHtml += '</div></div>';
             
             messageDiv.innerHTML = `
                 <p class="message-content">${content}</p>
@@ -1035,25 +1086,28 @@ HTML_TEMPLATE = '''
 
         // End thread and extract memories
         async function endThread() {
-            console.log('🔥 === ENDTHREAD FUNCTION CALLED ===');
-            console.log('🔥 Current thread ID:', currentThreadId);
+            console.log('🔧 DEBUG: === SAVE MEMORIES BUTTON CLICKED ===');
+            console.log('🔧 DEBUG: Current thread ID:', currentThreadId);
+            console.log('🔧 DEBUG: Messages in chat:', document.querySelectorAll('.message').length);
             
             if (!currentThreadId) {
-                alert('No active conversation to end.');
+                console.log('🔧 DEBUG: No active thread to save memories from');
+                addMessage('❌ No active conversation to save memories from.', 'assistant');
                 return;
             }
 
-            if (!confirm('End this conversation and extract memories for future chats?')) {
-                console.log('🔥 User cancelled thread ending');
-                return;
-            }
+            // No confirmation needed - just save memories
 
-            console.log('🔥 Starting thread ending process...');
+            console.log('🔧 DEBUG: Starting memory extraction process...');
+            console.log('🔧 DEBUG: Memory network function available:', typeof loadMemoryNetwork !== 'undefined');
             
             try {
                 showTypingIndicator();
+                addMessage('🧠 Analyzing conversation and extracting memories...', 'assistant');
+                console.log('🔧 DEBUG: Added progress message to chat');
                 
-                console.log('🔥 Making /end_thread request for thread:', currentThreadId);
+                console.log('🔧 DEBUG: Making POST request to /end_thread');
+                console.log('🔧 DEBUG: Request payload:', { thread_id: currentThreadId });
                 
                 const response = await fetch('/end_thread', {
                     method: 'POST',
@@ -1065,51 +1119,94 @@ HTML_TEMPLATE = '''
                     })
                 });
 
-                console.log('🔥 End thread response status:', response.status);
+                console.log('🔧 DEBUG: Response received - Status:', response.status);
+                console.log('🔧 DEBUG: Response OK:', response.ok);
+                
                 const data = await response.json();
-                console.log('🔥 End thread response data:', data);
+                console.log('🔧 DEBUG: Response data:', data);
+                console.log('🔧 DEBUG: Success:', data.success);
+                console.log('🔧 DEBUG: Extracted memories count:', data.extracted_memories?.length || 0);
+                console.log('🔧 DEBUG: Successful adds to memory system:', data.successful_adds || 0);
 
                 if (data.success) {
-                    console.log('🔥 ✅ End thread SUCCESS - extracted', data.extracted_memories?.length || 0, 'memories');
+                    console.log('🔧 DEBUG: ✅ Memory extraction successful!');
                     
-                    // Clear current thread immediately to prevent race conditions
-                    const oldThreadId = currentThreadId;
-                    currentThreadId = null;
-                    console.log('🔥 Cleared thread ID from', oldThreadId, 'to', currentThreadId);
+                    // DON'T clear the thread - keep it active so user can continue
+                    // const oldThreadId = currentThreadId;
+                    // currentThreadId = null;  // REMOVED - keep thread active
+                    console.log('🔧 DEBUG: Thread preserved - ID still:', currentThreadId);
                     
-                    // Show extracted memories
+                    // Show extracted memories with detailed feedback
                     if (data.extracted_memories && data.extracted_memories.length > 0) {
                         const memoriesText = data.extracted_memories.join('\\n• ');
-                        addMessage(`🧠 ${data.message || 'Conversation ended successfully!'}\\n\\n• ${memoriesText}\\n\\nThese will inform future conversations.`, 'assistant');
+                        addMessage(`✅ Memory extraction completed successfully!\\n\\n📚 Extracted ${data.extracted_memories.length} memories:\\n• ${memoriesText}\\n\\n🔄 Successfully added ${data.successful_adds || data.extracted_memories.length} memories to the system\\n\\n💡 You can continue this chat or click "New Chat" to start fresh.`, 'assistant');
+                        console.log('🔧 DEBUG: Added detailed success message with memory list');
+                        
+                        // Create temporary local nodes immediately for instant feedback
+                        console.log('🔧 DEBUG: Creating temporary local nodes for extracted memories...');
+                        data.extracted_memories.forEach((memoryText, index) => {
+                            const tempMemory = {
+                                id: 'temp_' + Date.now() + '_' + index,
+                                content: memoryText,
+                                score: 1.0,
+                                tags: ['conversation', 'auto-extracted', 'temp'],
+                                created: new Date().toISOString()
+                            };
+                            
+                            console.log('🔧 DEBUG: Creating temp node:', tempMemory);
+                            
+                            // Add to memory network if available
+                            if (typeof addMemoryToNetworkRealtime === 'function') {
+                                addMemoryToNetworkRealtime(tempMemory);
+                                console.log('🔧 DEBUG: Added temp memory to network:', tempMemory.id);
+                            } else {
+                                console.log('🔧 DEBUG: addMemoryToNetworkRealtime not available');
+                            }
+                        });
+                        
+                        // Show success notification
+                        if (typeof showNewMemoryNotification === 'function') {
+                            showNewMemoryNotification(`Added ${data.extracted_memories.length} new memories to network`);
+                        }
                     } else {
-                        addMessage('🧠 Conversation ended! No new memories were extracted from this conversation.', 'assistant');
+                        addMessage('✅ Memory extraction completed!\\n\\n📚 No new personal information was found to remember from this conversation.\\n\\n💡 You can continue this chat or click "New Chat" to start fresh.', 'assistant');
+                        console.log('🔧 DEBUG: Added success message - no new memories found');
                     }
                     
-                    // Refresh the memory network to show new memories
-                    setTimeout(() => {
-                        console.log('🔥 Refreshing memory network...');
-                        loadMemoryNetwork();
-                    }, 1000);
+                    // DON'T auto-clear the chat - user decides when to start new
+                    console.log('🔧 DEBUG: Chat preserved - user can continue or manually start new');
                     
-                    // Start a new thread immediately (no delay to prevent race conditions)
-                    setTimeout(() => {
-                        console.log('🔥 Starting new conversation...');
-                        const messagesContainer = document.getElementById('chat-messages');
-                        messagesContainer.innerHTML = '<div class="empty-state">Start a new conversation by typing a message below...</div>';
-                        updateThreadTitle();
-                        console.log('🔥 New conversation ready');
-                    }, 2500); // Wait a bit longer to let user read the success message
                 } else {
-                    console.log('🔥 ❌ End thread FAILED:', data.error);
-                    addMessage(`❌ ${data.error || 'Failed to end conversation and extract memories.'}`, 'assistant');
+                    console.log('🔧 DEBUG: ❌ Memory extraction failed');
+                    console.log('🔧 DEBUG: Error details:', data.error);
+                    addMessage(`❌ Memory extraction failed: ${data.error || 'Unknown error occurred'}\\n\\nPlease check the console for more details.`, 'assistant');
                 }
             } catch (error) {
-                console.log('🔥 💥 CATCH BLOCK in endThread:', error);
-                addMessage('❌ Error ending conversation. Please try again.', 'assistant');
+                console.error('🔧 DEBUG: 💥 Exception in endThread:', error);
+                console.error('🔧 DEBUG: Exception type:', error.name);
+                console.error('🔧 DEBUG: Exception message:', error.message);
+                console.error('🔧 DEBUG: Exception stack:', error.stack);
+                addMessage('❌ Error during memory extraction. Please check the browser console for details and try again.', 'assistant');
             } finally {
-                console.log('🔥 🧹 FINALLY BLOCK in endThread');
+                console.log('🔧 DEBUG: 🧹 Cleanup - hiding typing indicator');
                 hideTypingIndicator();
-                console.log('🔥 === END ENDTHREAD ===');
+                console.log('🔧 DEBUG: === SAVE MEMORIES PROCESS COMPLETE ===');
+            }
+        }
+
+        // Toggle memory context visibility
+        function toggleMemoryContext(memoryId) {
+            const content = document.getElementById(memoryId);
+            const toggle = document.getElementById('toggle-' + memoryId);
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                toggle.textContent = '▼ Click to view';
+                toggle.style.transform = 'rotate(0deg)';
+            } else {
+                content.classList.add('expanded');
+                toggle.textContent = '▲ Click to hide';
+                toggle.style.transform = 'rotate(180deg)';
             }
         }
 
@@ -1986,10 +2083,10 @@ HTML_TEMPLATE = '''
         // Initialize memory network after page load
         setTimeout(() => {
             initializeMemoryNetwork();
-            loadMemoryNetwork();
-            
-            // Auto-refresh network every 30 seconds
-            setInterval(loadMemoryNetwork, 30000);
+                loadMemoryNetwork();
+    
+    console.log('🎉 Memory Network initialized! Auto-refresh disabled by default for persistent node positions.');
+    console.log('💡 Use the refresh button or enable auto-refresh if needed.');
         }, 1000);
         
         // Check if memory system is available
@@ -2015,6 +2112,32 @@ def index():
 @app.route('/check_memory_availability')
 def check_memory_availability():
     return jsonify({'available': MEMORY_AVAILABLE})
+
+@app.route('/new-memories')
+def get_new_memories():
+    """Get and clear the queue of new memories for real-time network updates"""
+    print("🔧 DEBUG: ========== /new-memories endpoint called ==========")
+    
+    with session_new_memories_lock:
+        print(f"🔧 DEBUG: Session queue contains {len(session_new_memories)} memories before copy")
+        if session_new_memories:
+            print(f"🔧 DEBUG: Session queue contents: {[m.get('content', '')[:50] + '...' for m in session_new_memories]}")
+        
+        new_memories = session_new_memories.copy()
+        session_new_memories.clear()
+        
+        print(f"🔧 DEBUG: Returning {len(new_memories)} memories to frontend")
+        print(f"🔧 DEBUG: Session queue cleared, now contains {len(session_new_memories)} memories")
+    
+    response_data = {
+        'memories': new_memories,
+        'count': len(new_memories)
+    }
+    
+    print(f"🔧 DEBUG: /new-memories response: {response_data}")
+    print("🔧 DEBUG: ========== /new-memories endpoint complete ==========")
+    
+    return jsonify(response_data)
 
 @app.route('/memory-network')
 def memory_network():
@@ -2143,35 +2266,84 @@ def send_message():
 def end_thread():
     """Extract memories from a conversation thread when it ends"""
     try:
+        print("🔧 DEBUG: === /end_thread endpoint called ===")
+        
         data = request.get_json()
         thread_id = data.get('thread_id')
         
+        print(f"🔧 DEBUG: Request data: {data}")
+        print(f"🔧 DEBUG: Extracted thread_id: {thread_id}")
+        print(f"🔧 DEBUG: Available threads: {list(chat_threads.keys())}")
+        
         if not thread_id or thread_id not in chat_threads:
+            print(f"🔧 DEBUG: Thread not found - thread_id: {thread_id}, exists: {thread_id in chat_threads if thread_id else False}")
             return jsonify({'success': False, 'error': 'Thread not found'})
         
         conversation = chat_threads[thread_id]
+        print(f"🔧 DEBUG: Found conversation with {len(conversation)} messages")
+        
+        # Log conversation preview for debugging
+        for i, msg in enumerate(conversation[:3]):
+            print(f"🔧 DEBUG: Message {i+1}: {msg['sender']} - {msg['content'][:50]}...")
+        
+        if len(conversation) > 3:
+            print(f"🔧 DEBUG: ... and {len(conversation) - 3} more messages")
         
         # Extract memories with better error handling
         try:
+            print("🔧 DEBUG: Calling extract_memories_from_conversation...")
             extracted_memories = extract_memories_from_conversation(conversation)
+            print(f"🔧 DEBUG: Memory extraction returned {len(extracted_memories)} memories")
         except Exception as e:
             print(f"❌ Error during memory extraction: {e}")
+            print(f"🔧 DEBUG: Memory extraction exception: {type(e).__name__}: {e}")
             extracted_memories = []
         
         # Add extracted memories to the memory system using both local and API approach
         successful_adds = 0
         if extracted_memories:
             print(f"💾 Extracting {len(extracted_memories)} memories from conversation...")
+            print(f"🔧 DEBUG: MEMORY_AVAILABLE: {MEMORY_AVAILABLE}, memory_manager: {memory_manager}")
             
             # First try local memory manager
             if MEMORY_AVAILABLE and memory_manager:
                 for memory_text in extracted_memories:
                     try:
-                        memory_manager.add_memory(memory_text, ["conversation", "auto-extracted"])
+                        print(f"🔧 DEBUG: Adding memory: {memory_text[:50]}...")
+                        new_memory = memory_manager.add_memory(memory_text, ["conversation", "auto-extracted"])
+                        print(f"🔧 DEBUG: New memory object: {new_memory}")
                         print(f"   ✅ Added locally: {memory_text}")
                         successful_adds += 1
+                        
+                        # Add new memory to session queue for real-time network update
+                        if new_memory:
+                            memory_data = {
+                                'id': new_memory['id'],
+                                'content': new_memory['content'],
+                                'score': new_memory.get('score', 0),
+                                'tags': new_memory.get('tags', []),
+                                'created': new_memory.get('created', '')
+                            }
+                            print(f"🔧 DEBUG: ========== ADDING TO SESSION QUEUE ==========")
+                            print(f"🔧 DEBUG: Memory data prepared: {memory_data}")
+                            print(f"🔧 DEBUG: Current session queue size before add: {len(session_new_memories)}")
+                            
+                            with session_new_memories_lock:
+                                session_new_memories.append(memory_data)
+                                queue_size_after = len(session_new_memories)
+                                print(f"🔧 DEBUG: Session queue size after add: {queue_size_after}")
+                                print(f"🔧 DEBUG: Session queue contents: {[m.get('content', '')[:30] + '...' for m in session_new_memories]}")
+                            
+                            print(f"🌐 ✅ Queued new memory for network: {memory_data['id']}")
+                            print(f"🔧 DEBUG: ========== SESSION QUEUE ADD COMPLETE ==========")
+                        else:
+                            print(f"🔧 DEBUG: ❌ new_memory is None/empty - cannot add to session queue!")
+                            print(f"🔧 DEBUG: new_memory object: {new_memory}")
                     except Exception as e:
                         print(f"   ❌ Failed to add locally: {memory_text} - {e}")
+                        print(f"🔧 DEBUG: Exception details: {type(e).__name__}: {e}")
+            else:
+                print(f"🔧 DEBUG: Memory system not available - MEMORY_AVAILABLE: {MEMORY_AVAILABLE}, memory_manager: {memory_manager}")
             
             # Also try to add via API to ensure both servers are synchronized
             try:
@@ -2198,9 +2370,13 @@ def end_thread():
                 except Exception as e:
                     print(f"⚠️ Warning: Could not reload memory manager: {e}")
         
-        # Clean up the thread
-        if thread_id in chat_threads:
-            del chat_threads[thread_id]
+        # DON'T clean up the thread - keep it active so user can continue chatting
+        # if thread_id in chat_threads:
+        #     del chat_threads[thread_id]
+        #     print(f"🔧 DEBUG: Cleaned up thread {thread_id}")
+        print(f"🔧 DEBUG: Thread {thread_id} preserved for continued conversation")
+        
+        print(f"🔧 DEBUG: Preparing response - extracted: {len(extracted_memories)}, successful_adds: {successful_adds}")
         
         return jsonify({
             'success': True,
@@ -2212,13 +2388,18 @@ def end_thread():
         
     except Exception as e:
         print(f"❌ Error in end_thread: {e}")
+        print(f"🔧 DEBUG: Exception type: {type(e).__name__}")
+        print(f"🔧 DEBUG: Exception details: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
 
 def extract_memories_from_conversation(conversation):
     """
     Extract up to 5 meaningful memories from a conversation using OpenAI
     """
+    print(f"🔧 DEBUG: extract_memories_from_conversation called with {len(conversation) if conversation else 0} messages")
+    
     if not conversation or len(conversation) < 2:
+        print("🔧 DEBUG: Conversation too short, returning empty list")
         return []
     
     # Build conversation text
@@ -2226,6 +2407,8 @@ def extract_memories_from_conversation(conversation):
     for msg in conversation:
         role = "User" if msg['sender'] == 'user' else "Assistant"
         conversation_text += f"{role}: {msg['content']}\n"
+    
+    print(f"🔧 DEBUG: Built conversation text, length: {len(conversation_text)}")
     
     # Use OpenAI to extract memories
     try:
@@ -2246,6 +2429,8 @@ Conversation:
 
 Extracted memories:"""
 
+        print("🔧 DEBUG: Calling OpenAI API for memory extraction...")
+        
         response = client.chat.completions.create(
             model="gpt-3.5-turbo",
             messages=[{"role": "user", "content": extraction_prompt}],
@@ -2255,8 +2440,10 @@ Extracted memories:"""
         )
         
         result = response.choices[0].message.content.strip()
+        print(f"🔧 DEBUG: OpenAI response: {result}")
         
         if result == "NONE" or not result:
+            print("🔧 DEBUG: No memories extracted (NONE or empty result)")
             return []
         
         # Parse the memories
@@ -2270,11 +2457,14 @@ Extracted memories:"""
                 if not line.lower().startswith('i '):
                     line = f"I {line.lower()}"
                 memories.append(line)
+                print(f"🔧 DEBUG: Parsed memory: {line}")
         
+        print(f"🔧 DEBUG: Extracted {len(memories)} memories total")
         return memories[:5]  # Limit to 5 memories
         
     except Exception as e:
         print(f"❌ Error extracting memories: {e}")
+        print(f"🔧 DEBUG: Exception type: {type(e).__name__}")
         return []
 
 def generate_openai_response_with_memory(message, conversation_history, use_memory_search=True):

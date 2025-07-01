@@ -5,7 +5,7 @@ MEMORY_NETWORK_UI_TEMPLATE = '''
 <!-- Memory Network Section -->
 <div class="memory-network-container" id="memory-network-container">
     <div class="memory-network-header">
-        <h3>Neural Memory Network</h3>
+        <h3>Moneta: The Future of Memory</h3>
         <div class="threshold-controls">
             <label for="threshold-slider" style="color: var(--gray-400); font-size: 0.9rem;">Threshold:</label>
             <input type="range" id="threshold-slider" class="threshold-slider" min="0.1" max="0.8" step="0.05" value="0.35">
@@ -84,7 +84,7 @@ MEMORY_NETWORK_CSS = '''
 }
 
 .threshold-controls {
-    display: flex;
+    display: none; /* Hidden threshold slider container */
     gap: 8px;
     align-items: center;
     flex-wrap: wrap;

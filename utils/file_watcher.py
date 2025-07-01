@@ -28,8 +28,8 @@ def start_memory_file_watcher(memory_manager, path):
                 
             current_time = time.time()
             
-            # Avoid duplicate reloads within 5 seconds
-            if current_time - self.last_reload_time < 5.0:
+            # Avoid duplicate reloads within 10 seconds to reduce position resets
+            if current_time - self.last_reload_time < 10.0:
                 return
             
             try:

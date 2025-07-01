@@ -1,193 +1,174 @@
 {
   "memories": [
     {
-      "id": "mem_61b9d163-adde-4f86-a408-d686adb35fe0",
-      "content": "I love Italian food and pizza.",
-      "score": 12.56,
+      "id": "mem_b7876e4d-106a-4d3a-b7e5-1573931404ea",
+      "content": "I am named Ethan Curtis.",
+      "score": 7.96,
       "tags": [
         "conversation",
         "auto-extracted"
       ],
-      "created": "2025-06-25"
+      "created": "2025-06-30"
     },
     {
-      "id": "mem_7cefe969-9d9f-4fde-b8e1-1194d721aa0f",
-      "content": "I love Italian food and pizza.",
-      "score": 12.56,
+      "id": "mem_39801ae9-a3a0-427f-b717-a84b31091efd",
+      "content": "I like sharks.",
+      "score": 3.48,
       "tags": [
         "conversation",
         "auto-extracted"
       ],
-      "created": "2025-06-25"
+      "created": "2025-06-30"
     },
     {
-      "id": "mem_51cbbd0f-00f6-44a6-95a0-cbc7c21c295f",
-      "content": "I love Italian Food",
-      "score": 10.61,
-      "tags": [],
-      "created": "2025-06-24"
-    },
-    {
-      "id": "mem_6036ca7a-a8b3-4159-bfe2-da6088decc21",
-      "content": "I love pizza",
-      "score": 8.66,
-      "tags": [],
-      "created": "2025-06-24"
-    },
-    {
-      "id": "mem_5c771ecc-7520-462e-8a4f-a895678fdf62",
-      "content": "I am very smart",
-      "score": 3.09,
-      "tags": [],
-      "created": "2025-06-24"
-    },
-    {
-      "id": "mem_e0d74f5b-608d-4b90-a57a-44c5efed4016",
-      "content": "I am a genius",
-      "score": 2.44,
-      "tags": [],
-      "created": "2025-06-24"
-    },
-    {
-      "id": "mem_bbb5a034-cc4a-4505-8c50-ea01321fe583",
-      "content": "I am a prodigy",
-      "score": 1.61,
-      "tags": [],
-      "created": "2025-06-25"
-    },
-    {
-      "id": "mem_ced2c12c-8068-44c2-bf21-a9f0027f0bc3",
-      "content": "I enjoy playing fortnite in the summer",
-      "score": 3.49,
-      "tags": [],
-      "created": "2025-06-24"
-    },
-    {
-      "id": "mem_5f26ad35-410b-42ca-9cf1-7160de1658bf",
-      "content": "I love cars like Lamborghinis.",
-      "score": 4.94,
+      "id": "mem_48825307-95fb-489b-99fa-23c472fd39c1",
+      "content": "I like sharks.",
+      "score": 3.48,
       "tags": [
         "conversation",
         "auto-extracted"
       ],
-      "created": "2025-06-25"
+      "created": "2025-06-30"
     },
     {
-      "id": "mem_1e6d9647-b47f-461c-8496-de65a23252af",
-      "content": "I really enjoy playing tennis, especially at night.",
-      "score": 1.03,
+      "id": "mem_862e966e-e7bc-41eb-9627-7e1c43901f19",
+      "content": "I my name is ethan curtis.",
+      "score": 6.88,
       "tags": [
         "conversation",
         "auto-extracted"
       ],
-      "created": "2025-06-25"
+      "created": "2025-06-30"
     },
     {
-      "id": "mem_d1b08644-b6c7-4cae-8417-1186e9d33f34",
-      "content": "I enjoy intellectual activities",
-      "score": 0.45,
-      "tags": [],
-      "created": "2025-06-25"
-    },
-    {
-      "id": "mem_31752182-d224-4c5b-b675-4f9171516545",
-      "content": "I love lemonade.",
-      "score": 3.0,
+      "id": "mem_e5ccf412-ec63-4b64-a262-8e9946a7858a",
+      "content": "I want to be the next Tony Stark.",
+      "score": 5.24,
       "tags": [
         "conversation",
         "auto-extracted"
       ],
-      "created": "2025-06-24"
+      "created": "2025-06-30"
     },
     {
-      "id": "mem_c8c9349a-ab03-41fb-a6a8-afb0bf4ffb56",
-      "content": "I love sunshine.",
-      "score": 2.13,
+      "id": "mem_10096509-69af-465e-9ad1-fdfea6ab2481",
+      "content": "I am considering a career in engineering.",
+      "score": 1.65,
       "tags": [
         "conversation",
         "auto-extracted"
       ],
-      "created": "2025-06-25"
+      "created": "2025-06-30"
     },
     {
-      "id": "mem_561b4d1a-3f12-4e51-82c9-8e20348b9df5",
-      "content": "I enjoy Italian food, especially pizza.",
-      "score": 12.2,
+      "id": "mem_2a851401-a87d-4374-9a00-db2278e323e6",
+      "content": "I am interested in software engineering.",
+      "score": 1.18,
       "tags": [
         "conversation",
         "auto-extracted"
       ],
-      "created": "2025-06-25"
+      "created": "2025-06-30"
     },
     {
-      "id": "mem_feb92685-df5a-4d69-893c-bd9a134c85ef",
-      "content": "I enjoy driving luxury cars like Lamborghinis.",
-      "score": 6.81,
+      "id": "mem_48467e85-a516-4cb6-b4a4-806ac3e87fa7",
+      "content": "I really like Marvel movies.",
+      "score": 4.66,
       "tags": [
         "conversation",
         "auto-extracted"
       ],
-      "created": "2025-06-25"
+      "created": "2025-06-30"
     },
     {
-      "id": "mem_81dfe066-f51c-42ac-b4c8-34059c1a0253",
-      "content": "I really like Ferraris.",
-      "score": 6.97,
+      "id": "mem_a4e0c629-8065-4b08-a2e1-140aa256a870",
+      "content": "I iron man is my favorite.",
+      "score": 3.69,
       "tags": [
         "conversation",
         "auto-extracted"
       ],
-      "created": "2025-06-25"
+      "created": "2025-06-30"
     },
     {
-      "id": "mem_90d1cf3f-4989-4a2b-9281-b84a26bb01af",
-      "content": "I really like playing Fortnite in the summer.",
-      "score": 3.49,
+      "id": "mem_46d921e8-19d0-4094-ab50-90b1cf04ba41",
+      "content": "I aspire to be the next Tony Stark.",
+      "score": 5.29,
       "tags": [
         "conversation",
         "auto-extracted"
       ],
-      "created": "2025-06-25"
+      "created": "2025-06-30"
     },
     {
-      "id": "mem_7162b78c-500a-41e8-bd27-3dfe8e3f05c0",
-      "content": "I love lemonade.",
-      "score": 3.0,
+      "id": "mem_29f0822f-e0ab-4848-87f2-c158c57d2364",
+      "content": "I prefer shorter, more concise responses.",
+      "score": 3.12,
       "tags": [
         "conversation",
         "auto-extracted"
       ],
-      "created": "2025-06-25"
+      "created": "2025-06-30"
     },
     {
-      "id": "mem_af5a5dc5-90bc-4f04-9e30-db09626ee103",
-      "content": "I my iq is nearing the 4 figures :)",
-      "score": 1.11,
+      "id": "mem_0cf00b7c-58e6-4b07-8c80-dfaaeae6a96d",
+      "content": "I go by the name Ethan.",
+      "score": 7.93,
       "tags": [
         "conversation",
         "auto-extracted"
       ],
-      "created": "2025-06-25"
+      "created": "2025-06-30"
     },
     {
-      "id": "mem_73bf28e1-b6cf-47a6-86e0-be78a744c9a9",
-      "content": "I really enjoy Ed Sheeran.",
-      "score": 0.1,
+      "id": "mem_9d3f50c3-5a87-433f-82d3-81f25f194b47",
+      "content": "I prefer to be called Ethan.",
+      "score": 6.71,
       "tags": [
         "conversation",
         "auto-extracted"
       ],
-      "created": "2025-06-25"
+      "created": "2025-07-01"
     },
     {
-      "id": "mem_7d475d42-440f-4a72-8e2c-ca1a7bdf8891",
-      "content": "I really like the sun",
-      "score": 2.23,
+      "id": "mem_092be963-4685-4431-aff1-4755e0976461",
+      "content": "I enjoy pizza",
+      "score": 0.65,
       "tags": [
         "conversation",
         "auto-extracted"
       ],
-      "created": "2025-06-26"
+      "created": "2025-07-01"
+    },
+    {
+      "id": "mem_0ff3bead-69e4-4a27-aaff-d3c3f74b20c4",
+      "content": "I prefer concise responses",
+      "score": 3.06,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-07-01"
+    },
+    {
+      "id": "mem_5bae9088-ec70-4e56-9388-3700dd889053",
+      "content": "I like Marvel movies",
+      "score": 4.57,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-07-01"
+    },
+    {
+      "id": "mem_73a84687-d1f0-425b-a134-e49da794b31b",
+      "content": "I aspire to be like Iron Man/engineer when I grow up",
+      "score": 6.15,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-07-01"
     }
   ]
 }

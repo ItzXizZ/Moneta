@@ -51,7 +51,10 @@ class OpenAIService:
     
     def extract_memories_from_conversation(self, conversation):
         """Extract up to 5 meaningful memories from a conversation using OpenAI"""
+        print(f"🔧 DEBUG: extract_memories_from_conversation called with {len(conversation) if conversation else 0} messages")
+        
         if not conversation or len(conversation) < 2:
+            print("🔧 DEBUG: Conversation too short, returning empty list")
             return []
         
         # Build conversation text
@@ -59,6 +62,8 @@ class OpenAIService:
         for msg in conversation:
             role = "User" if msg['sender'] == 'user' else "Assistant"
             conversation_text += f"{role}: {msg['content']}\n"
+        
+        print(f"🔧 DEBUG: Built conversation text, length: {len(conversation_text)}")
         
         # Use OpenAI to extract memories
         try:
@@ -79,6 +84,8 @@ Conversation:
 
 Extracted memories:"""
 
+            print("🔧 DEBUG: Calling OpenAI API for memory extraction...")
+            
             response = self.client.chat.completions.create(
                 model="gpt-3.5-turbo",
                 messages=[{"role": "user", "content": extraction_prompt}],
@@ -88,8 +95,10 @@ Extracted memories:"""
             )
             
             result = response.choices[0].message.content.strip()
+            print(f"🔧 DEBUG: OpenAI response: {result}")
             
             if result == "NONE" or not result:
+                print("🔧 DEBUG: No memories extracted (NONE or empty result)")
                 return []
             
             # Parse the memories
@@ -103,11 +112,14 @@ Extracted memories:"""
                     if not line.lower().startswith('i '):
                         line = f"I {line.lower()}"
                     memories.append(line)
+                    print(f"🔧 DEBUG: Parsed memory: {line}")
             
+            print(f"🔧 DEBUG: Extracted {len(memories)} memories total")
             return memories[:5]  # Limit to 5 memories
             
         except Exception as e:
             print(f"❌ Error extracting memories: {e}")
+            print(f"🔧 DEBUG: Exception type: {type(e).__name__}")
             return []
 
 # Global service instance
