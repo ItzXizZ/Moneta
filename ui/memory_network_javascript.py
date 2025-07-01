@@ -27,27 +27,26 @@ MEMORY_NETWORK_JAVASCRIPT = '''
     let sessionMemoryIds = new Set();
     let newMemoryPollingInterval = null;
 
-    // Memory Network Functions
-    
-    // Calculate proportional node size based on relative scores
+    // Proportional Node Sizing System
     function calculateProportionalNodeSize(score, allScores) {
-        console.log(`🔧 DEBUG: calculateProportionalNodeSize called with score=${score}, allScores=`, allScores);
+        // Safety check - if no scores or invalid score, return default size
+        if (!allScores || allScores.length === 0 || score === undefined || score === null) {
+            return 35; // Safe default size
+        }
         
-        if (!allScores || allScores.length === 0) {
-            console.log('🔧 DEBUG: No scores available, returning default size 40');
-            return 40; // Default size if no scores available
+        // Ensure all scores are valid numbers
+        const validScores = allScores.filter(s => typeof s === 'number' && !isNaN(s) && s >= 0);
+        if (validScores.length === 0) {
+            return 35; // Safe default size
         }
         
         // Find min/max scores in the dataset
-        const minScore = Math.min(...allScores);
-        const maxScore = Math.max(...allScores);
+        const minScore = Math.min(...validScores);
+        const maxScore = Math.max(...validScores);
         
-        console.log(`🔧 DEBUG: Score range: min=${minScore}, max=${maxScore}`);
-        
-        // Handle edge case where all scores are the same
+        // If all scores are the same, return a reasonable default size
         if (minScore === maxScore) {
-            console.log('🔧 DEBUG: All scores are the same, returning default size 40');
-            return 40; // Default size for uniform scores
+            return 35;
         }
         
         // Apply logarithmic scaling to handle infinite growth
@@ -62,28 +61,55 @@ MEMORY_NETWORK_JAVASCRIPT = '''
         const sigmoid = 1 / (1 + Math.exp(-10 * (relativePosition - 0.5)));
         
         // Map to size range with minimum visibility guarantee
-        const minSize = 30;  // Increased minimum visible size
-        const maxSize = 70;  // Slightly reduced maximum size cap
+        const minSize = 25;  // Minimum visible size
+        const maxSize = 80;  // Maximum size cap
         const sizeRange = maxSize - minSize;
         
         const calculatedSize = minSize + (sigmoid * sizeRange);
         
-        // Ensure the size is within reasonable bounds
-        const finalSize = Math.max(30, Math.min(70, calculatedSize));
+        // Ensure the size is within bounds and return
+        const finalSize = Math.max(minSize, Math.min(maxSize, calculatedSize));
         
-        console.log(`📊 Proportional sizing: score=${score}, relative=${relativePosition.toFixed(3)}, sigmoid=${sigmoid.toFixed(3)}, size=${finalSize.toFixed(1)}`);
+        // Debug logging for size calculations
+        if (score > 50) { // Only log for higher scores to avoid spam
+            console.log(`📏 Proportional sizing: score=${score}, min=${minScore}, max=${maxScore}, size=${finalSize.toFixed(1)}`);
+        }
         
         return finalSize;
     }
-    
+
+    // Function to recalculate all node sizes based on current score distribution
+    function recalculateAllNodeSizes() {
+        if (!networkData || !networkData.nodes || networkData.nodes.length === 0) {
+            return;
+        }
+        
+        // Extract all current scores
+        const allScores = networkData.nodes.map(n => n.score || 0);
+        
+        // Recalculate sizes for all nodes
+        networkData.nodes.forEach(node => {
+            const newSize = calculateProportionalNodeSize(node.score || 0, allScores);
+            node.size = newSize;
+            
+            // Update font size proportionally
+            node.font = {
+                ...node.font,
+                size: Math.max(10, Math.min(14, 8 + newSize * 0.08))
+            };
+        });
+        
+        // Update the network with new sizes
+        if (memoryNetwork) {
+            memoryNetwork.setData(networkData);
+        }
+        
+        console.log('🔄 Recalculated node sizes for proportional distribution');
+    }
+
+    // Memory Network Functions
     function initializeMemoryNetwork() {
         const container = document.getElementById('memory-network');
-        
-        console.log('🔧 DEBUG: Container found:', !!container);
-        if (container) {
-            console.log('🔧 DEBUG: Container dimensions:', container.offsetWidth, 'x', container.offsetHeight);
-            console.log('🔧 DEBUG: Container style:', container.style.cssText);
-        }
         
         // Clear any loading text first
         container.innerHTML = '<div class="memory-activity-indicator" id="activity-indicator">🔥 Memory Activity</div>';
@@ -91,7 +117,7 @@ MEMORY_NETWORK_JAVASCRIPT = '''
         const options = {
             nodes: {
                 shape: 'dot',
-                scaling: { min: 20, max: 55 },
+                scaling: { min: 20, max: 85 }, // Updated to accommodate larger proportional sizes
                 font: {
                     size: 11,
                     color: '#ffffff',
@@ -173,17 +199,6 @@ MEMORY_NETWORK_JAVASCRIPT = '''
                 adaptiveTimestep: false,
                 timestep: 0.3
             },
-            // Add smooth transitions for size changes
-            nodes: {
-                ...options.nodes,
-                scaling: {
-                    ...options.nodes.scaling,
-                    animation: {
-                        duration: 600,
-                        easingFunction: 'easeInOutQuad'
-                    }
-                }
-            },
             interaction: {
                 hover: true,
                 tooltipDelay: 150,
@@ -212,10 +227,7 @@ MEMORY_NETWORK_JAVASCRIPT = '''
             }
         };
         
-        console.log('🔧 DEBUG: Creating vis.Network with options:', options);
         memoryNetwork = new vis.Network(container, networkData, options);
-        
-        console.log('🔧 DEBUG: Network created successfully:', !!memoryNetwork);
         
         // Keep default positioning - nodes should be visible
         console.log('🧠 Memory network will auto-fit to viewport');
@@ -354,31 +366,14 @@ MEMORY_NETWORK_JAVASCRIPT = '''
         // Save current positions before update
         saveNodePositions();
         
+        // Create new nodes with elegant Apple-style design
         // Extract all scores for proportional sizing
-        const allScores = newData.nodes.map(node => node.score);
+        const allScores = newData.nodes.map(n => n.score || 0);
         
-        // Create new nodes with proportional sizing based on relative scores
         const processedNodes = newData.nodes.map((node, index) => {
-            console.log(`🔧 DEBUG: Processing node ${index}: id=${node.id}, score=${node.score}, label=${node.label.substring(0, 30)}...`);
-            
             const intensity = Math.max(0.7, Math.min(1, node.score / 100));
-            
-            // Use proportional sizing, but fallback to original sizing if needed
-            let size;
-            try {
-                size = calculateProportionalNodeSize(node.score, allScores);
-                console.log(`🔧 DEBUG: Node ${index} proportional size: ${size}`);
-            } catch (error) {
-                console.warn(`🔧 DEBUG: Proportional sizing failed for node ${index}, using fallback:`, error);
-                size = Math.max(30, Math.min(65, 30 + node.score * 0.45));
-                console.log(`🔧 DEBUG: Node ${index} fallback size: ${size}`);
-            }
-            
-            // Ensure minimum visibility
-            size = Math.max(35, size);
-            console.log(`🔧 DEBUG: Node ${index} final size after minimum check: ${size}`);
-            
-            console.log(`🔧 DEBUG: Node ${index} final size: ${size}`);
+            // Use proportional sizing instead of linear sizing
+            const size = calculateProportionalNodeSize(node.score || 0, allScores);
             
             return {
                 id: node.id,
@@ -442,17 +437,12 @@ MEMORY_NETWORK_JAVASCRIPT = '''
         });
         
         // Update the network
-        console.log(`🔧 DEBUG: About to update network with ${networkData.nodes.length} nodes and ${networkData.edges.length} edges`);
-        console.log(`🔧 DEBUG: Sample node data:`, networkData.nodes[0]);
-        
         if (isInitialLoad) {
             // First load - allow physics to position nodes naturally
-            console.log('🔧 DEBUG: Initial load - setting network data');
             memoryNetwork.setData(networkData);
             isInitialLoad = false;
         } else {
             // Incremental update - preserve positions
-            console.log('🔧 DEBUG: Incremental update - setting network data');
             memoryNetwork.setData(networkData);
             
             // Animate new nodes if any
@@ -461,8 +451,6 @@ MEMORY_NETWORK_JAVASCRIPT = '''
                 setTimeout(() => animateNewNodes(newNodeIds), 100);
             }
         }
-        
-        console.log('🔧 DEBUG: Network data set successfully');
         
         // Update stats
         document.getElementById('memory-count').textContent = newData.nodes.length;
@@ -485,11 +473,10 @@ MEMORY_NETWORK_JAVASCRIPT = '''
         lastNetworkHash = newHash;
         console.log(`🧠 Updated network: ${newData.nodes.length} memories, ${newData.edges.length} connections`);
         
-        // Log score distribution for debugging
-        const scoreRange = allScores.length > 0 ? 
-            `Score range: ${Math.min(...allScores)} - ${Math.max(...allScores)}` : 
-            'No scores available';
-        console.log(`📊 ${scoreRange}`);
+        // Recalculate all node sizes for proportional distribution
+        setTimeout(() => {
+            recalculateAllNodeSizes();
+        }, 100);
         
         // Start glow decay system
         startGlowDecay();
@@ -564,18 +551,8 @@ MEMORY_NETWORK_JAVASCRIPT = '''
     async function loadMemoryNetwork() {
         try {
             const threshold = parseFloat(document.getElementById('threshold-slider')?.value || currentThreshold);
-            console.log(`🔧 DEBUG: Loading memory network with threshold: ${threshold}`);
-            
             const response = await fetch(`/memory-network?threshold=${threshold}`);
             const data = await response.json();
-            
-            console.log(`🔧 DEBUG: Received network data:`, data);
-            console.log(`🔧 DEBUG: Number of nodes: ${data.nodes?.length || 0}`);
-            console.log(`🔧 DEBUG: Number of edges: ${data.edges?.length || 0}`);
-            
-            if (data.nodes && data.nodes.length > 0) {
-                console.log(`🔧 DEBUG: Sample node:`, data.nodes[0]);
-            }
             
             // Use incremental update instead of complete replacement
             await updateMemoryNetworkIncremental(data);
@@ -653,26 +630,11 @@ MEMORY_NETWORK_JAVASCRIPT = '''
         console.log('🔧 DEBUG: Current network data nodes:', networkData.nodes.length);
         console.log('🚀 Adding memory to network in real-time:', memoryData.content.substring(0, 30) + '...');
         
-        // Extract all scores including the new memory for proportional sizing
-        const allScores = [...networkData.nodes.map(node => node.score), memoryData.score];
-        
-        // Create new node with proportional sizing
+        // Create new node
         const intensity = Math.max(0.7, Math.min(1, memoryData.score / 100));
-        
-        // Use proportional sizing, but fallback to original sizing if needed
-        let size;
-        try {
-            size = calculateProportionalNodeSize(memoryData.score, allScores);
-            console.log(`🔧 DEBUG: New memory proportional size: ${size}`);
-        } catch (error) {
-            console.warn(`🔧 DEBUG: Proportional sizing failed for new memory, using fallback:`, error);
-            size = Math.max(30, Math.min(65, 30 + memoryData.score * 0.45));
-            console.log(`🔧 DEBUG: New memory fallback size: ${size}`);
-        }
-        
-        // Ensure minimum visibility
-        size = Math.max(35, size);
-        console.log(`🔧 DEBUG: New memory final size after minimum check: ${size}`);
+        // Extract all scores including the new memory for proportional sizing
+        const allScores = [...networkData.nodes.map(n => n.score || 0), memoryData.score || 0];
+        const size = calculateProportionalNodeSize(memoryData.score || 0, allScores);
         
         console.log('🔧 DEBUG: Node properties - intensity:', intensity, 'size:', size);
         
@@ -753,16 +715,11 @@ MEMORY_NETWORK_JAVASCRIPT = '''
         memoryNetwork.setData(networkData);
         console.log('🔧 DEBUG: memoryNetwork.setData completed');
         
-        // Animate the new node and recalculate sizes
+        // Animate the new node
         setTimeout(() => {
             console.log('🔧 DEBUG: Starting animation for new node');
             animateNewNodes([memoryData.id]);
             console.log(`🎯 Added memory with ${newEdges.length} connections`);
-            
-            // Recalculate all node sizes to maintain proportional scaling
-            setTimeout(() => {
-                recalculateAllNodeSizes();
-            }, 300);
             
             // Update stats
             const memoryCountEl = document.getElementById('memory-count');
@@ -782,8 +739,8 @@ MEMORY_NETWORK_JAVASCRIPT = '''
     // Simple similarity calculation for real-time use
     function calculateSimpleSimilarity(text1, text2) {
         // Convert to lowercase and split into words
-        const words1 = text1.toLowerCase().split(/\\s+/);
-        const words2 = text2.toLowerCase().split(/\\s+/);
+        const words1 = text1.toLowerCase().split(/\s+/);
+        const words2 = text2.toLowerCase().split(/\s+/);
         
         // Create word frequency maps
         const freq1 = {};
@@ -813,30 +770,6 @@ MEMORY_NETWORK_JAVASCRIPT = '''
         return dotProduct / (Math.sqrt(magnitude1) * Math.sqrt(magnitude2));
     }
 
-    // Recalculate all node sizes based on current score distribution
-    function recalculateAllNodeSizes() {
-        if (!memoryNetwork || !networkData.nodes.length) return;
-        
-        console.log('🔄 Recalculating all node sizes for proportional scaling...');
-        
-        // Extract all current scores
-        const allScores = networkData.nodes.map(node => node.score);
-        
-        // Update each node's size
-        networkData.nodes.forEach(node => {
-            const newSize = calculateProportionalNodeSize(node.score, allScores);
-            node.size = newSize;
-            
-            // Update font size proportionally
-            node.font.size = Math.max(10, Math.min(14, 8 + newSize * 0.08));
-        });
-        
-        // Update the network with smooth transitions
-        memoryNetwork.setData(networkData);
-        
-        console.log(`✅ Updated ${networkData.nodes.length} node sizes with proportional scaling`);
-    }
-    
     // Global functions to be called when new memories are created
     window.addNewMemoryToNetwork = function(memoryData) {
         addMemoryToSession(memoryData);
@@ -844,8 +777,10 @@ MEMORY_NETWORK_JAVASCRIPT = '''
 
     window.addMemoryToNetworkRealtime = addMemoryToNetworkRealtime;
     
-    // Global function to recalculate node sizes
-    window.recalculateNodeSizes = recalculateAllNodeSizes;
+    // Global function to manually recalculate node sizes
+    window.recalculateNodeSizes = function() {
+        recalculateAllNodeSizes();
+    };
 
     // Simple notification function
     window.showNewMemoryNotification = function(message) {

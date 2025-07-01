@@ -349,6 +349,52 @@
             let nodeGlowLevels = {}; // Track accumulating glow for each node
             let activeSignals = 0;
 
+            // Proportional Node Sizing System
+            function calculateProportionalNodeSize(score, allScores) {
+                // Safety check - if no scores or invalid score, return default size
+                if (!allScores || allScores.length === 0 || score === undefined || score === null) {
+                    return 35; // Safe default size
+                }
+                
+                // Ensure all scores are valid numbers
+                const validScores = allScores.filter(s => typeof s === 'number' && !isNaN(s) && s >= 0);
+                if (validScores.length === 0) {
+                    return 35; // Safe default size
+                }
+                
+                // Find min/max scores in the dataset
+                const minScore = Math.min(...validScores);
+                const maxScore = Math.max(...validScores);
+                
+                // If all scores are the same, return a reasonable default size
+                if (minScore === maxScore) {
+                    return 35;
+                }
+                
+                // Apply logarithmic scaling to handle infinite growth
+                const logMin = Math.log(minScore + 1);
+                const logMax = Math.log(maxScore + 1);
+                const logScore = Math.log(score + 1);
+                
+                // Calculate relative position (0-1)
+                const relativePosition = (logScore - logMin) / (logMax - logMin);
+                
+                // Apply sigmoid function for smooth distribution
+                const sigmoid = 1 / (1 + Math.exp(-10 * (relativePosition - 0.5)));
+                
+                // Map to size range with minimum visibility guarantee
+                const minSize = 25;  // Minimum visible size
+                const maxSize = 80;  // Maximum size cap
+                const sizeRange = maxSize - minSize;
+                
+                const calculatedSize = minSize + (sigmoid * sizeRange);
+                
+                // Ensure the size is within bounds and return
+                const finalSize = Math.max(minSize, Math.min(maxSize, calculatedSize));
+                
+                return finalSize;
+            }
+
             // Sample memory data for testing
             const sampleMemories = [
                 { id: 'mem1', content: 'I love pizza with mushrooms', score: 85, tags: ['food', 'preference'] },
@@ -374,7 +420,7 @@
                         shape: 'dot',
                         scaling: {
                             min: 20,
-                            max: 55
+                            max: 85
                         },
                         font: {
                             size: 11,
@@ -591,9 +637,13 @@
                 });
                 
                 // Create nodes with elegant Apple-style design
+                // Extract all scores for proportional sizing
+                const allScores = sampleMemories.map(mem => mem.score || 0);
+                
                 const nodes = sampleMemories.map(mem => {
                     const intensity = Math.max(0.7, Math.min(1, mem.score / 100));
-                    const size = Math.max(30, Math.min(65, 30 + mem.score * 0.45));
+                    // Use proportional sizing instead of linear sizing
+                    const size = calculateProportionalNodeSize(mem.score || 0, allScores);
                     
                     return {
                         id: mem.id,
