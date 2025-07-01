@@ -62,14 +62,14 @@ MEMORY_NETWORK_JAVASCRIPT = '''
         const sigmoid = 1 / (1 + Math.exp(-10 * (relativePosition - 0.5)));
         
         // Map to size range with minimum visibility guarantee
-        const minSize = 25;  // Minimum visible size
-        const maxSize = 80;  // Maximum size cap
+        const minSize = 30;  // Increased minimum visible size
+        const maxSize = 70;  // Slightly reduced maximum size cap
         const sizeRange = maxSize - minSize;
         
         const calculatedSize = minSize + (sigmoid * sizeRange);
         
         // Ensure the size is within reasonable bounds
-        const finalSize = Math.max(25, Math.min(80, calculatedSize));
+        const finalSize = Math.max(30, Math.min(70, calculatedSize));
         
         console.log(`📊 Proportional sizing: score=${score}, relative=${relativePosition.toFixed(3)}, sigmoid=${sigmoid.toFixed(3)}, size=${finalSize.toFixed(1)}`);
         
@@ -78,6 +78,12 @@ MEMORY_NETWORK_JAVASCRIPT = '''
     
     function initializeMemoryNetwork() {
         const container = document.getElementById('memory-network');
+        
+        console.log('🔧 DEBUG: Container found:', !!container);
+        if (container) {
+            console.log('🔧 DEBUG: Container dimensions:', container.offsetWidth, 'x', container.offsetHeight);
+            console.log('🔧 DEBUG: Container style:', container.style.cssText);
+        }
         
         // Clear any loading text first
         container.innerHTML = '<div class="memory-activity-indicator" id="activity-indicator">🔥 Memory Activity</div>';
@@ -206,7 +212,10 @@ MEMORY_NETWORK_JAVASCRIPT = '''
             }
         };
         
+        console.log('🔧 DEBUG: Creating vis.Network with options:', options);
         memoryNetwork = new vis.Network(container, networkData, options);
+        
+        console.log('🔧 DEBUG: Network created successfully:', !!memoryNetwork);
         
         // Keep default positioning - nodes should be visible
         console.log('🧠 Memory network will auto-fit to viewport');
@@ -365,6 +374,10 @@ MEMORY_NETWORK_JAVASCRIPT = '''
                 console.log(`🔧 DEBUG: Node ${index} fallback size: ${size}`);
             }
             
+            // Ensure minimum visibility
+            size = Math.max(35, size);
+            console.log(`🔧 DEBUG: Node ${index} final size after minimum check: ${size}`);
+            
             console.log(`🔧 DEBUG: Node ${index} final size: ${size}`);
             
             return {
@@ -429,12 +442,17 @@ MEMORY_NETWORK_JAVASCRIPT = '''
         });
         
         // Update the network
+        console.log(`🔧 DEBUG: About to update network with ${networkData.nodes.length} nodes and ${networkData.edges.length} edges`);
+        console.log(`🔧 DEBUG: Sample node data:`, networkData.nodes[0]);
+        
         if (isInitialLoad) {
             // First load - allow physics to position nodes naturally
+            console.log('🔧 DEBUG: Initial load - setting network data');
             memoryNetwork.setData(networkData);
             isInitialLoad = false;
         } else {
             // Incremental update - preserve positions
+            console.log('🔧 DEBUG: Incremental update - setting network data');
             memoryNetwork.setData(networkData);
             
             // Animate new nodes if any
@@ -443,6 +461,8 @@ MEMORY_NETWORK_JAVASCRIPT = '''
                 setTimeout(() => animateNewNodes(newNodeIds), 100);
             }
         }
+        
+        console.log('🔧 DEBUG: Network data set successfully');
         
         // Update stats
         document.getElementById('memory-count').textContent = newData.nodes.length;
@@ -649,6 +669,10 @@ MEMORY_NETWORK_JAVASCRIPT = '''
             size = Math.max(30, Math.min(65, 30 + memoryData.score * 0.45));
             console.log(`🔧 DEBUG: New memory fallback size: ${size}`);
         }
+        
+        // Ensure minimum visibility
+        size = Math.max(35, size);
+        console.log(`🔧 DEBUG: New memory final size after minimum check: ${size}`);
         
         console.log('🔧 DEBUG: Node properties - intensity:', intensity, 'size:', size);
         
