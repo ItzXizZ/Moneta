@@ -2,7 +2,9 @@
 Flask==2.3.3
 Flask-Cors==4.0.0
 
-# Lightweight data processing
+# Data science and ML dependencies (FULL VERSION)
+scikit-learn
+sentence-transformers
 numpy
 
 # Environment and configuration
@@ -22,6 +24,7 @@ gunicorn
 requests
 urllib3
 
-# Lightweight ML alternative (if needed)
-# scikit-learn-intelex  # Intel optimized version - much lighter
-# sentence-transformers  # Removed - too heavy for deployment 
+# Additional ML and data processing libraries
+torch
+transformers
+scipy 
