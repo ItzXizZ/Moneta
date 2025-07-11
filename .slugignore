@@ -1,0 +1,89 @@
+# Development and testing files
+tests/
+test_*.py
+*_test.py
+*.pyc
+__pycache__/
+
+# Documentation and README files
+*.md
+HOW_TO_USE.md
+README.md
+CLOUD_MIGRATION_README.md
+Live_Score_Updates_README.md
+Memory_Scoring_System_Tutorial.md
+START_MEMORYOS.md
+
+# Media files (videos, images)
+media/
+*.mp4
+*.avi
+*.mov
+*.wmv
+*.flv
+*.webm
+
+# Development scripts
+start_*.ps1
+run_*.py
+setup_*.py
+migrate_*.py
+check_*.py
+
+# Local environment files
+.env
+.venv/
+venv/
+env/
+
+# Git files
+.git/
+.gitignore
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+temp/
+tmp/
+
+# Log files
+*.log
+logs/
+
+# Cache files
+*.cache
+cache/
+
+# Build artifacts
+build/
+dist/
+*.egg-info/
+
+# Node modules (if any)
+node_modules/
+
+# Standalone HTML files (not needed for deployment)
+*.html
+hi.html
+memory_network_standalone.html
+
+# Migration and setup scripts
+migrate_to_cloud.py
+run_migration.py
+setup_cloud.py
+start_cloud_system.py
+
+# Test files
+test_*.py
+*_test.py 
