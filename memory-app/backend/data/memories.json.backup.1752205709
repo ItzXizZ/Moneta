@@ -1,0 +1,174 @@
+{
+  "memories": [
+    {
+      "id": "mem_b7876e4d-106a-4d3a-b7e5-1573931404ea",
+      "content": "I am named Ethan Curtis.",
+      "score": 7.85,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-30"
+    },
+    {
+      "id": "mem_39801ae9-a3a0-427f-b717-a84b31091efd",
+      "content": "I like sharks.",
+      "score": 3.0,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-30"
+    },
+    {
+      "id": "mem_48825307-95fb-489b-99fa-23c472fd39c1",
+      "content": "I like sharks.",
+      "score": 3.0,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-30"
+    },
+    {
+      "id": "mem_862e966e-e7bc-41eb-9627-7e1c43901f19",
+      "content": "I my name is ethan curtis.",
+      "score": 6.77,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-30"
+    },
+    {
+      "id": "mem_e5ccf412-ec63-4b64-a262-8e9946a7858a",
+      "content": "I want to be the next Tony Stark.",
+      "score": 5.2,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-30"
+    },
+    {
+      "id": "mem_10096509-69af-465e-9ad1-fdfea6ab2481",
+      "content": "I am considering a career in engineering.",
+      "score": 1.61,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-30"
+    },
+    {
+      "id": "mem_2a851401-a87d-4374-9a00-db2278e323e6",
+      "content": "I am interested in software engineering.",
+      "score": 1.17,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-30"
+    },
+    {
+      "id": "mem_48467e85-a516-4cb6-b4a4-806ac3e87fa7",
+      "content": "I really like Marvel movies.",
+      "score": 4.23,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-30"
+    },
+    {
+      "id": "mem_a4e0c629-8065-4b08-a2e1-140aa256a870",
+      "content": "I iron man is my favorite.",
+      "score": 3.26,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-30"
+    },
+    {
+      "id": "mem_46d921e8-19d0-4094-ab50-90b1cf04ba41",
+      "content": "I aspire to be the next Tony Stark.",
+      "score": 5.25,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-30"
+    },
+    {
+      "id": "mem_29f0822f-e0ab-4848-87f2-c158c57d2364",
+      "content": "I prefer shorter, more concise responses.",
+      "score": 2.81,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-30"
+    },
+    {
+      "id": "mem_0cf00b7c-58e6-4b07-8c80-dfaaeae6a96d",
+      "content": "I go by the name Ethan.",
+      "score": 7.7,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-06-30"
+    },
+    {
+      "id": "mem_9d3f50c3-5a87-433f-82d3-81f25f194b47",
+      "content": "I prefer to be called Ethan.",
+      "score": 6.48,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-07-01"
+    },
+    {
+      "id": "mem_092be963-4685-4431-aff1-4755e0976461",
+      "content": "I enjoy pizza",
+      "score": 0.0,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-07-01"
+    },
+    {
+      "id": "mem_0ff3bead-69e4-4a27-aaff-d3c3f74b20c4",
+      "content": "I prefer concise responses",
+      "score": 2.71,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-07-01"
+    },
+    {
+      "id": "mem_5bae9088-ec70-4e56-9388-3700dd889053",
+      "content": "I like Marvel movies",
+      "score": 4.07,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-07-01"
+    },
+    {
+      "id": "mem_73a84687-d1f0-425b-a134-e49da794b31b",
+      "content": "I aspire to be like Iron Man/engineer when I grow up",
+      "score": 6.02,
+      "tags": [
+        "conversation",
+        "auto-extracted"
+      ],
+      "created": "2025-07-01"
+    }
+  ]
+}

@@ -226,7 +226,7 @@ class MemoryManager:
                 score_increase = similarity * 30
                 memory_to_update['score'] = float(memory_to_update['score']) + float(score_increase)
     
-    def _calculate_all_scores_and_connections(self, sim_threshold=0.35):
+    def _calculate_all_scores_and_connections(self, sim_threshold=0.35, preserve_reinforcement=True):
         """
         Comprehensive function that calculates all scores and connections.
         Uses much more accurate similarity thresholds and quality filtering.
@@ -237,6 +237,7 @@ class MemoryManager:
                          - 0.5-0.7: Moderate connection  
                          - 0.7-0.85: Strong connection
                          - 0.85+: Very strong connection
+            preserve_reinforcement: If True, preserves existing reinforcement scores
         """
         if self.search_embeddings is None:
             self._build_search_index()
@@ -280,7 +281,11 @@ class MemoryManager:
         
         # 3. Calculate scores with weighted importance
         for i, mem in enumerate(all_mems):
-            score = 0.0
+            # Store existing reinforcement score if preserving
+            existing_score = mem.get('score', 0) if preserve_reinforcement else 0
+            
+            # Calculate base score from connections
+            base_score = 0.0
             connection_count = len(connections[i])
             
             # Base score from connections
@@ -292,34 +297,43 @@ class MemoryManager:
                     weight = 2.0  # Moderate connections
                 else:
                     weight = 1.0  # Weak connections
-                score += sim * weight
+                base_score += sim * weight
             
             # Bonus for being a hub (connected to many relevant memories)
             if connection_count >= 3:
-                score += connection_count * 0.1
+                base_score += connection_count * 0.1
             
             # Content quality bonus (longer, more detailed memories)
             word_count = len(mem['content'].split())
             if word_count >= 10:
-                score += 0.2
+                base_score += 0.2
             elif word_count >= 5:
-                score += 0.1
+                base_score += 0.1
+            
+            # Combine base score with existing reinforcement
+            if preserve_reinforcement:
+                # Keep the higher of base score or existing score, but add some base score
+                final_score = max(existing_score, base_score * 0.5) + base_score * 0.3
+            else:
+                final_score = base_score
                 
-            mem['score'] = round(score, 2)
+            mem['score'] = round(final_score, 2)
         
-        self._save_memories()
+        # Only save if we're not preserving reinforcement (to avoid overwriting)
+        if not preserve_reinforcement:
+            self._save_memories()
         return connections, sim_matrix
 
-    def _recalculate_scores_by_connections(self, sim_threshold=0.35):
+    def _recalculate_scores_by_connections(self, sim_threshold=0.35, preserve_reinforcement=True):
         """Legacy wrapper - now calls the comprehensive function."""
-        return self._calculate_all_scores_and_connections(sim_threshold)
+        return self._calculate_all_scores_and_connections(sim_threshold, preserve_reinforcement)
 
     def _update_scores_on_add(self, new_content, method='tfidf'):
         """Legacy wrapper - now just recalculates everything."""
         # Rebuild search index to include new memory
         self._build_search_index()
-        # Recalculate all scores
-        self._calculate_all_scores_and_connections(sim_threshold=0.35)
+        # Recalculate all scores, preserving reinforcement
+        self._calculate_all_scores_and_connections(sim_threshold=0.35, preserve_reinforcement=True)
 
     def add_memory(self, content, tags=None, method='tfidf'):
         new_memory = {
@@ -333,7 +347,7 @@ class MemoryManager:
         self.memories['memories'].append(new_memory)
         self._save_memories()
         self._build_search_index()
-        self._recalculate_scores_by_connections()  # New scoring system
+        self._recalculate_scores_by_connections(preserve_reinforcement=True)  # Preserve existing reinforcement
         return new_memory
 
     def search_memories(self, query, top_k=10, min_relevance=0.2):
@@ -395,8 +409,8 @@ class MemoryManager:
             
         print(f"🧠 Reinforcing {len(recalled_memories)} recalled memories...")
         
-        # Get current connection graph
-        result = self._calculate_all_scores_and_connections(sim_threshold=0.35)
+        # Get current connection graph (preserve reinforcement scores)
+        result = self._calculate_all_scores_and_connections(sim_threshold=0.35, preserve_reinforcement=True)
         if result is None or result == (None, None):
             print("❌ No connection graph available for reinforcement")
             return
@@ -473,7 +487,7 @@ class MemoryManager:
         
         print(f"   ✅ Applied reinforcements to {total_reinforced} memories")
         
-        # Save the updated memories
+        # Save the updated memories to persist reinforcement scores
         self._save_memories()
         
         # Rebuild search index with new scores
@@ -481,15 +495,12 @@ class MemoryManager:
 
     def get_all_memories(self):
         """Get all memories as a flat list, sorted by score."""
-        # First, recalculate scores to ensure they're current
-        self._recalculate_scores_by_connections()
-        
-        # Get all memories flat and sort by score
+        # Get all memories flat and sort by score (don't recalculate to preserve reinforcement)
         all_memories = self._get_all_memories_flat()
         sorted_memories = sorted(all_memories, key=lambda x: x.get('score', 0), reverse=True)
         
+        # Update the in-memory structure but don't save (to avoid overwriting)
         self.memories['memories'] = sorted_memories
-        self._save_memories()
         return self.memories
 
     def get_top_memories(self, limit=10):
@@ -543,7 +554,8 @@ class MemoryManager:
                 del self.memories['memories'][i]
                 self._save_memories()
                 self._build_search_index()
-                self._recalculate_scores_by_connections()
+                # Recalculate scores but preserve reinforcement for remaining memories
+                self._recalculate_scores_by_connections(preserve_reinforcement=True)
                 return True
         return False
     AVAILABLE_MODELS = [
@@ -565,6 +577,36 @@ class MemoryManager:
 
     def get_current_model(self):
         return getattr(self, 'st_model_name', 'all-mpnet-base-v2')
+
+    def _get_last_update_time(self):
+        """Get the timestamp of the last score update"""
+        try:
+            if os.path.exists(self.db_path):
+                return os.path.getmtime(self.db_path)
+            return 0
+        except:
+            return 0
+
+    def recalculate_all_scores(self, sim_threshold=0.35):
+        """
+        Manually recalculate all scores from scratch (use sparingly).
+        This will overwrite any existing reinforcement scores.
+        """
+        print("🔄 Manually recalculating all scores from scratch...")
+        result = self._calculate_all_scores_and_connections(sim_threshold, preserve_reinforcement=False)
+        self._save_memories()
+        print("✅ Score recalculation complete")
+        return result
+
+    def save_current_scores(self):
+        """
+        Save current scores to JSON file to make them persistent.
+        This preserves all current reinforcement and connection scores.
+        """
+        print("💾 Saving current scores to JSON...")
+        self._save_memories()
+        print("✅ Current scores saved to memories.json")
+        return True
 
     def reload_from_disk(self):
         """Reload memories and search index from disk with error handling."""

@@ -94,8 +94,8 @@ def memory_network():
     except Exception:
         threshold = 0.35
     
-    # Use the comprehensive function to get connections and similarity matrix
-    result = mm._calculate_all_scores_and_connections(threshold)
+    # Use the comprehensive function to get connections and similarity matrix (preserve reinforcement)
+    result = mm._calculate_all_scores_and_connections(threshold, preserve_reinforcement=True)
     if result is None or result == (None, None):
         return jsonify({'nodes': [], 'edges': []})
     
@@ -131,12 +131,82 @@ def memory_network():
 
     return jsonify({'nodes': nodes, 'edges': edges})
 
+@app.route('/score-updates')
+def get_score_updates():
+    """Get updated scores for all memories for live score updates"""
+    try:
+        # Get all memories with current scores (don't recalculate to preserve reinforcement)
+        all_mems = mm._get_all_memories_flat()
+        
+        # Return only the essential data for score updates
+        score_updates = []
+        for mem in all_mems:
+            score_updates.append({
+                'id': mem['id'],
+                'score': mem.get('score', 0),
+                'content': mem['content'][:50] + '...' if len(mem['content']) > 50 else mem['content']
+            })
+        
+        return jsonify({
+            'success': True,
+            'updates': score_updates,
+            'timestamp': mm._get_last_update_time()
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
 @app.route('/memories/<string:memory_id>', methods=['DELETE'])
 def delete_memory(memory_id):
     success = mm.delete_memory(memory_id)
     if success:
         return jsonify({'success': True}), 200
     return jsonify({'error': 'Memory not found'}), 404
+
+@app.route('/recalculate-scores', methods=['POST'])
+def recalculate_scores():
+    """Manually recalculate all scores from scratch"""
+    try:
+        data = request.json or {}
+        threshold = data.get('threshold', 0.35)
+        
+        result = mm.recalculate_all_scores(threshold)
+        if result is None or result == (None, None):
+            return jsonify({'success': False, 'error': 'No memories to recalculate'}), 400
+        
+        return jsonify({
+            'success': True,
+            'message': 'All scores recalculated successfully',
+            'threshold': threshold
+        })
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
+
+@app.route('/save-scores', methods=['POST'])
+def save_scores():
+    """Save current scores to JSON file"""
+    try:
+        success = mm.save_current_scores()
+        if success:
+            return jsonify({
+                'success': True,
+                'message': 'Current scores saved to memories.json'
+            })
+        else:
+            return jsonify({
+                'success': False,
+                'error': 'Failed to save scores'
+            }), 500
+    except Exception as e:
+        return jsonify({
+            'success': False,
+            'error': str(e)
+        }), 500
 
 if __name__ == '__main__':
     app.run(debug=True)

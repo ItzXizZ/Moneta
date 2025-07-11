@@ -11,6 +11,10 @@ class OpenAIService:
     
     def generate_response_with_memory(self, message, conversation_history):
         """Generate AI response using OpenAI API with memory context"""
+        # Check if OpenAI client is available
+        if not self.client:
+            return "I apologize, but I encountered an error: OpenAI API key not configured. Please set OPENAI_API_KEY in your .env file.", []
+        
         try:
             messages = [
                 {"role": "system", "content": "You are a helpful AI assistant. Use the following user memories to answer as personally and specifically as possible. If relevant, reference these memories directly in your answer. If no memories are relevant, answer as best you can.\n\n"}
@@ -52,6 +56,11 @@ class OpenAIService:
     def extract_memories_from_conversation(self, conversation):
         """Extract up to 5 meaningful memories from a conversation using OpenAI"""
         print(f"🔧 DEBUG: extract_memories_from_conversation called with {len(conversation) if conversation else 0} messages")
+        
+        # Check if OpenAI client is available
+        if not self.client:
+            print("🔧 DEBUG: OpenAI client not available, cannot extract memories")
+            return []
         
         if not conversation or len(conversation) < 2:
             print("🔧 DEBUG: Conversation too short, returning empty list")

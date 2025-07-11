@@ -6,6 +6,17 @@ MEMORY_NETWORK_UI_TEMPLATE = '''
 <div class="memory-network-container" id="memory-network-container">
     <div class="memory-network-header">
         <h3>Moneta: The Future of Memory</h3>
+        <div class="network-controls">
+            <button id="toggle-score-updates" class="btn btn-success" onclick="toggleLiveScoreUpdates()">
+                📊 Enable Live Scores
+            </button>
+            <button id="auto-refresh-toggle" class="btn btn-secondary" onclick="toggleAutoRefresh()">
+                🔄 Auto Refresh
+            </button>
+            <button id="save-scores-btn" class="btn btn-info" onclick="saveScoresToJSON()">
+                💾 Save Scores
+            </button>
+        </div>
         <div class="threshold-controls">
             <label for="threshold-slider" style="color: var(--gray-400); font-size: 0.9rem;">Threshold:</label>
             <input type="range" id="threshold-slider" class="threshold-slider" min="0.1" max="0.8" step="0.05" value="0.35">
@@ -81,6 +92,75 @@ MEMORY_NETWORK_CSS = '''
     margin: 0;
     font-size: 1.2rem;
     font-weight: 500;
+}
+
+.network-controls {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.network-controls .btn {
+    background: var(--glass-bg);
+    backdrop-filter: var(--glass-blur);
+    border: 1px solid var(--glass-border);
+    border-radius: 8px;
+    padding: 6px 12px;
+    color: rgba(255, 255, 255, 0.9);
+    font-size: 0.8rem;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.3s var(--ease-smooth);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+.network-controls .btn:hover {
+    background: rgba(168, 85, 247, 0.2);
+    border-color: var(--primary-400);
+    transform: translateY(-1px);
+    box-shadow: 
+        0 4px 12px rgba(168, 85, 247, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2);
+}
+
+.network-controls .btn-success {
+    background: rgba(34, 197, 94, 0.2);
+    border-color: rgba(34, 197, 94, 0.5);
+}
+
+.network-controls .btn-success:hover {
+    background: rgba(34, 197, 94, 0.3);
+    border-color: rgba(34, 197, 94, 0.7);
+}
+
+.network-controls .btn-warning {
+    background: rgba(245, 158, 11, 0.2);
+    border-color: rgba(245, 158, 11, 0.5);
+}
+
+.network-controls .btn-warning:hover {
+    background: rgba(245, 158, 11, 0.3);
+    border-color: rgba(245, 158, 11, 0.7);
+}
+
+.network-controls .btn-secondary {
+    background: rgba(107, 114, 128, 0.2);
+    border-color: rgba(107, 114, 128, 0.5);
+}
+
+.network-controls .btn-secondary:hover {
+    background: rgba(107, 114, 128, 0.3);
+    border-color: rgba(107, 114, 128, 0.7);
+}
+
+.network-controls .btn-info {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+
+.network-controls .btn-info:hover {
+    background: rgba(59, 130, 246, 0.3);
+    border-color: rgba(59, 130, 246, 0.7);
 }
 
 .threshold-controls {

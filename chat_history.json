@@ -232,6 +232,114 @@
       "content": "Bread is a wonderful food too! It's a staple in many cuisines and can be enjoyed in a variety of ways. Do you have a favorite type of bread or a specific way you like to eat it?",
       "sender": "assistant",
       "timestamp": "2025-07-01T18:32:10.640684"
+    },
+    {
+      "id": "7d10c77e-f4fa-400d-8176-a7f1f9973d47",
+      "content": "I really want to be like iron man",
+      "sender": "user",
+      "timestamp": "2025-07-01T19:08:10.579187"
+    },
+    {
+      "id": "9b44c23a-fda5-44c1-8caf-595f1367756e",
+      "content": "That's an inspiring goal! Iron Man, also known as Tony Stark, is a brilliant engineer and inventor with a unique blend of intelligence, creativity, and charisma. It's great that you aspire to follow in his footsteps. Is there a particular aspect of Iron Man's character or skills that you find most appealing?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T19:08:13.413426"
+    },
+    {
+      "id": "9757dfdf-bd67-4369-9546-25bd42f0f3ce",
+      "content": "I love pizza",
+      "sender": "user",
+      "timestamp": "2025-07-01T19:25:44.412345"
+    },
+    {
+      "id": "bc26068c-8fcf-4b1c-a1c0-6c2fb04d37a8",
+      "content": "Pizza is definitely a crowd-pleaser! With so many topping options and styles to choose from, there's a pizza for everyone. Do you have a favorite type of pizza or a go-to topping combination that you enjoy the most?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T19:25:47.811752"
+    },
+    {
+      "id": "483ae45d-488d-45b5-9b0a-c88daca2f51a",
+      "content": "I like marvel",
+      "sender": "user",
+      "timestamp": "2025-07-01T19:26:04.729897"
+    },
+    {
+      "id": "d6af90a1-610c-4fdb-823a-e80e517b6c1d",
+      "content": "That's awesome! Marvel movies have brought so many iconic characters and thrilling stories to life on the big screen. Is there a particular Marvel movie or character that stands out as your favorite?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T19:26:06.743452"
+    },
+    {
+      "id": "e0be6f30-56fb-4ac5-9b8c-705f42bed71c",
+      "content": "I like marve",
+      "sender": "user",
+      "timestamp": "2025-07-01T19:26:31.498680"
+    },
+    {
+      "id": "09907051-8990-43bd-8766-b2ba4749d6ac",
+      "content": "Marvel has created a vast and captivating universe with its comics, movies, and characters. Is there a specific Marvel character or storyline that you find most interesting or exciting?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T19:26:33.638056"
+    },
+    {
+      "id": "b7bae433-2a3f-4532-87ba-120989a85d4c",
+      "content": "I like marvel",
+      "sender": "user",
+      "timestamp": "2025-07-01T19:26:40.911249"
+    },
+    {
+      "id": "3e333354-a85a-4f7a-a434-d3172694dab2",
+      "content": "It's clear you have a strong affinity for Marvel content! The Marvel universe is full of action, heroism, and complex characters. Do you have a favorite Marvel movie or character that you particularly enjoy watching or reading about?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T19:26:43.001805"
+    },
+    {
+      "id": "e16fba3a-bc82-430a-8383-fcf58dd14cfc",
+      "content": "I love sharks",
+      "sender": "user",
+      "timestamp": "2025-07-10T23:59:49.409749"
+    },
+    {
+      "id": "5ddda029-7de8-4548-9d65-9c04f6fcfd36",
+      "content": "I apologize, but I encountered an error: 'NoneType' object has no attribute 'chat'. Please try again.",
+      "sender": "assistant",
+      "timestamp": "2025-07-10T23:59:49.955668"
+    },
+    {
+      "id": "94facb84-ffd0-4643-a216-83b4540446ae",
+      "content": "hi",
+      "sender": "user",
+      "timestamp": "2025-07-10T23:59:53.848913"
+    },
+    {
+      "id": "934bdaf2-81eb-4cb7-acb1-e9e5d2045aea",
+      "content": "I apologize, but I encountered an error: 'NoneType' object has no attribute 'chat'. Please try again.",
+      "sender": "assistant",
+      "timestamp": "2025-07-10T23:59:58.397314"
+    },
+    {
+      "id": "06861263-9872-46df-8843-bc71e01396f1",
+      "content": "hi",
+      "sender": "user",
+      "timestamp": "2025-07-11T00:04:25.668992"
+    },
+    {
+      "id": "03861111-992f-4d0b-b2de-e18ff5217e94",
+      "content": "Hello! How can I assist you today?",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T00:04:32.009530"
+    },
+    {
+      "id": "8151e10f-9eba-4952-9668-41d0084b2307",
+      "content": "i like iron man",
+      "sender": "user",
+      "timestamp": "2025-07-11T00:04:39.204073"
+    },
+    {
+      "id": "b7b909a6-1511-4889-b6fd-18d69d7440c5",
+      "content": "That's fantastic! Iron Man is such a charismatic and iconic character in the Marvel universe. What is it about Iron Man that resonates with you the most?",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T00:04:41.602005"
     }
   ]
 }

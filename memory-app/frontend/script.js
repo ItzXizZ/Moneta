@@ -15,30 +15,40 @@ let suppressMemoryNotifications = false;
 // --- Render Memories List ---
 async function renderMemories() {
     try {
-        const response = await apiCall('/memories');
+        console.log('🔍 Loading memories...');
         const container = document.getElementById('memories-container');
         
-        // Handle the response format: {memories: [...]}
-        const memories = response?.memories || [];
+        // Direct fetch approach that works
+        const response = await fetch('http://localhost:5001/memories');
+        if (!response.ok) {
+            throw new Error(`HTTP ${response.status}`);
+        }
         
-        if (!memories || !Array.isArray(memories) || memories.length === 0) {
+        const memories = await response.json();
+        console.log(`📊 Loaded ${memories.length} memories`);
+        
+        if (!memories || memories.length === 0) {
             container.innerHTML = '<p class="text-gray-400">No memories found.</p>';
             return;
         }
 
-        container.innerHTML = memories.map(memory => `
+        // Use the working approach from test.html but with proper styling
+        container.innerHTML = memories.map((memory, index) => `
             <div class="memory-card" data-memory-id="${memory.id}">
-                <p>${memory.content}</p>
+                <p><strong>${index + 1}.</strong> ${memory.content}</p>
                 <div class="flex justify-between items-center mt-3">
                     <span class="memory-score">Score: ${memory.score.toFixed(2)}</span>
-                    <span class="text-gray-400 text-sm">${memory.created}</span>
+                    <span class="text-gray-400 text-sm">${new Date(memory.timestamp).toLocaleDateString()}</span>
                     <button class="delete-memory-btn" onclick="deleteMemory('${memory.id}')">Delete</button>
                 </div>
             </div>
         `).join('');
+        
+        console.log('✅ Memories rendered successfully');
     } catch (error) {
-        console.error('Error rendering memories:', error);
-        document.getElementById('memories-container').innerHTML = '<p class="text-red-400">Failed to load memories.</p>';
+        console.error('Error loading memories:', error);
+        const container = document.getElementById('memories-container');
+        container.innerHTML = `<p class="text-red-400">Failed to load memories: ${error.message}</p>`;
     }
 }
 
@@ -48,8 +58,9 @@ async function deleteMemory(memoryId) {
     
     try {
         const result = await apiCall(`/memories/${memoryId}`, { method: 'DELETE' });
-        if (result && result.success) {
+        if (result && result.message) {
             await renderMemories(); // Refresh the list
+            console.log('Memory deleted successfully');
         } else {
             alert('Failed to delete memory.');
         }
@@ -113,7 +124,7 @@ function setupSearch() {
 // --- Search Memories ---
 async function searchMemories(query) {
     try {
-        const results = await apiCall(`/search/${encodeURIComponent(query)}`);
+        const results = await apiCall(`/search?q=${encodeURIComponent(query)}`);
         const container = document.getElementById('memories-container');
         
         if (!results || !Array.isArray(results) || results.length === 0) {
@@ -738,32 +749,35 @@ async function checkForNewMemories() {
 }
 
 // --- API Call Helper ---
+const API_BASE_URL = 'http://localhost:5001';
+
 async function apiCall(url, options = {}) {
-    try {
-        const response = await fetch(url, {
-            headers: {
-                'Content-Type': 'application/json',
-            },
-            credentials: 'same-origin',
-            ...options,
-        });
-        if (!response.ok) {
-            throw new Error('API error: ' + response.status);
-        }
-        return await response.json();
-    } catch (err) {
-        console.error('API call failed:', err);
-        return null;
+    const fullUrl = url.startsWith('http') ? url : `${API_BASE_URL}${url}`;
+    const response = await fetch(fullUrl, {
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        credentials: 'same-origin',
+        ...options,
+    });
+    
+    if (!response.ok) {
+        throw new Error(`API error: ${response.status}`);
     }
+    
+    return await response.json();
 }
 
 // --- Initialize App ---
 document.addEventListener('DOMContentLoaded', () => {
-    // Initialize memories list
+    console.log('🚀 MemoryOS App initializing...');
+    
+    // Initialize memories list with the working approach
     renderMemories();
     
-    // Start polling for new memories
-    startNewMemoryPolling();
+    // Setup other features
+    setupSearch();
+    setupSettings();
     
     // Setup search functionality
     setupSearch();
@@ -797,18 +811,28 @@ document.addEventListener('DOMContentLoaded', () => {
             const content = memoryContent.value.trim();
             if (!content) return;
 
-            // Optionally, you can add tags or method here
-            const data = { content };
-            const result = await apiCall('/memories', {
-                method: 'POST',
-                body: JSON.stringify(data),
-            });
-            if (result && result.id) {
-                memoryContent.value = '';
-                // Re-render memories list instead of reloading page
-                await renderMemories();
-            } else {
-                alert('Failed to add memory.');
+            try {
+                // Direct fetch approach that works
+                const response = await fetch('http://localhost:5001/memories', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ content }),
+                });
+                
+                if (response.ok) {
+                    const result = await response.json();
+                    console.log('✅ Memory added:', result);
+                    memoryContent.value = '';
+                    // Re-render memories list
+                    await renderMemories();
+                } else {
+                    throw new Error(`HTTP ${response.status}`);
+                }
+            } catch (error) {
+                console.error('Error adding memory:', error);
+                alert(`Failed to add memory: ${error.message}`);
             }
         });
     }

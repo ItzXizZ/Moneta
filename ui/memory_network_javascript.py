@@ -26,6 +26,12 @@ MEMORY_NETWORK_JAVASCRIPT = '''
     let sessionMemories = [];
     let sessionMemoryIds = new Set();
     let newMemoryPollingInterval = null;
+    
+    // Live score update system
+    let scoreUpdateInterval = null;
+    let lastScoreUpdateTime = 0;
+    let scoreUpdateEnabled = false;
+    let nodeScoreAnimations = new Map(); // Track ongoing score animations
 
     // Proportional Node Sizing System
     function calculateProportionalNodeSize(score, allScores) {
@@ -105,6 +111,201 @@ MEMORY_NETWORK_JAVASCRIPT = '''
         }
         
         console.log('🔄 Recalculated node sizes for proportional distribution');
+    }
+
+    // Live Score Update Functions
+    function startLiveScoreUpdates() {
+        if (scoreUpdateInterval) {
+            clearInterval(scoreUpdateInterval);
+        }
+        
+        scoreUpdateInterval = setInterval(checkForScoreUpdates, 3000); // Check every 3 seconds
+        scoreUpdateEnabled = true;
+        console.log('📊 Live score updates enabled - checking every 3 seconds');
+    }
+
+    function stopLiveScoreUpdates() {
+        if (scoreUpdateInterval) {
+            clearInterval(scoreUpdateInterval);
+            scoreUpdateInterval = null;
+        }
+        scoreUpdateEnabled = false;
+        console.log('⏸️ Live score updates disabled');
+    }
+
+    async function checkForScoreUpdates() {
+        try {
+            const response = await fetch('/score-updates');
+            const data = await response.json();
+            
+            if (data.success && data.updates) {
+                // Check if we have new updates
+                if (data.timestamp > lastScoreUpdateTime) {
+                    lastScoreUpdateTime = data.timestamp;
+                    await updateNodeScores(data.updates);
+                }
+            }
+        } catch (error) {
+            console.error('❌ Error checking for score updates:', error);
+        }
+    }
+
+    async function updateNodeScores(scoreUpdates) {
+        if (!networkData || !networkData.nodes || !memoryNetwork) {
+            return;
+        }
+
+        // Extract all current scores for proportional sizing
+        const allScores = networkData.nodes.map(n => n.score || 0);
+        let hasChanges = false;
+
+        // Update scores and trigger animations
+        scoreUpdates.forEach(update => {
+            const node = networkData.nodes.find(n => n.id === update.id);
+            if (node) {
+                const oldScore = node.score || 0;
+                const newScore = update.score;
+                
+                if (Math.abs(newScore - oldScore) > 0.01) { // Only update if significant change
+                    node.score = newScore;
+                    hasChanges = true;
+                    
+                    // Start score animation
+                    animateNodeScoreChange(node.id, oldScore, newScore);
+                    
+                    console.log(`📈 Score update: ${update.content} ${oldScore.toFixed(2)} → ${newScore.toFixed(2)}`);
+                }
+            }
+        });
+
+        if (hasChanges) {
+            // Recalculate all node sizes with new score distribution
+            recalculateAllNodeSizes();
+            
+            // Update the network
+            memoryNetwork.setData(networkData);
+            
+            console.log('🎯 Applied live score updates to network');
+        }
+    }
+
+    function animateNodeScoreChange(nodeId, oldScore, newScore) {
+        // Cancel any existing animation for this node
+        if (nodeScoreAnimations.has(nodeId)) {
+            clearInterval(nodeScoreAnimations.get(nodeId));
+        }
+
+        const node = networkData.nodes.find(n => n.id === nodeId);
+        if (!node) return;
+
+        const scoreDiff = newScore - oldScore;
+        const animationDuration = 1000; // 1 second
+        const steps = 20;
+        const stepSize = scoreDiff / steps;
+        const stepDuration = animationDuration / steps;
+        
+        let currentStep = 0;
+        
+        const animation = setInterval(() => {
+            currentStep++;
+            const currentScore = oldScore + (stepSize * currentStep);
+            
+            // Update node score during animation
+            node.score = currentScore;
+            
+            // Update node color intensity based on score
+            const intensity = Math.max(0.7, Math.min(1, currentScore / 100));
+            node.color = {
+                background: `rgba(35,4,55,${intensity})`,
+                border: `rgba(255,255,255,${Math.min(0.4, intensity * 0.5)})`,
+                highlight: {
+                    background: `rgba(70,9,107,${intensity})`,
+                    border: 'rgba(255,255,255,0.8)'
+                },
+                hover: {
+                    background: `rgba(50,6,80,${intensity})`,
+                    border: 'rgba(255,255,255,0.6)'
+                }
+            };
+            
+            // Update the specific node in the network
+            if (memoryNetwork) {
+                memoryNetwork.body.data.nodes.update(node);
+            }
+            
+            if (currentStep >= steps) {
+                // Animation complete
+                clearInterval(animation);
+                nodeScoreAnimations.delete(nodeId);
+                
+                // Ensure final score is exact
+                node.score = newScore;
+                if (memoryNetwork) {
+                    memoryNetwork.body.data.nodes.update(node);
+                }
+            }
+        }, stepDuration);
+        
+        nodeScoreAnimations.set(nodeId, animation);
+    }
+
+    function toggleLiveScoreUpdates() {
+        if (scoreUpdateEnabled) {
+            stopLiveScoreUpdates();
+        } else {
+            startLiveScoreUpdates();
+        }
+        
+        // Update UI button if it exists
+        const button = document.getElementById('toggle-score-updates');
+        if (button) {
+            button.textContent = scoreUpdateEnabled ? '⏸️ Pause Score Updates' : '📊 Enable Live Scores';
+            button.className = scoreUpdateEnabled ? 'btn btn-warning' : 'btn btn-success';
+        }
+        
+        // Show status message
+        if (scoreUpdateEnabled) {
+            console.log('📊 Live score updates enabled - scores will update every 3 seconds');
+            console.log('💡 Node sizes and colors will animate smoothly as scores change');
+        } else {
+            console.log('⏸️ Live score updates disabled');
+        }
+    }
+
+    async function saveScoresToJSON() {
+        try {
+            const button = document.getElementById('save-scores-btn');
+            if (button) {
+                button.textContent = '💾 Saving...';
+                button.disabled = true;
+            }
+            
+            const response = await fetch('/save-scores', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            const data = await response.json();
+            
+            if (data.success) {
+                console.log('✅ ' + data.message);
+                alert('✅ Scores saved to memories.json!');
+            } else {
+                console.error('❌ Failed to save scores:', data.error);
+                alert('❌ Failed to save scores: ' + data.error);
+            }
+        } catch (error) {
+            console.error('❌ Error saving scores:', error);
+            alert('❌ Error saving scores: ' + error.message);
+        } finally {
+            const button = document.getElementById('save-scores-btn');
+            if (button) {
+                button.textContent = '💾 Save Scores';
+                button.disabled = false;
+            }
+        }
     }
 
     // Memory Network Functions
@@ -1421,9 +1622,11 @@ MEMORY_NETWORK_JAVASCRIPT = '''
         // Note: Real-time memory updates now use immediate temporary nodes instead of polling
         // startNewMemoryPolling(); // Disabled - using immediate temp nodes instead
         
+        // Initialize live score updates (disabled by default)
         console.log('🎉 Memory Network initialized! Auto-refresh disabled by default for persistent node positions.');
         console.log('💡 Use the refresh button or enable auto-refresh if needed.');
         console.log('🚀 Real-time memory updates enabled via immediate temporary nodes!');
+        console.log('📊 Live score updates available - click "Enable Live Scores" to activate!');
     }, 1000);
     </script>
     ''' 
