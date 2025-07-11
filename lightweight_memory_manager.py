@@ -62,7 +62,7 @@ class LightweightMemoryManager:
         print(f"🧠 Added memory: {memory_id}")
         return memory_id
     
-    def search_memories(self, query: str, limit: int = 5) -> List[Dict[str, Any]]:
+    def search_memories(self, query: str, top_k: int = 5, min_relevance: float = 0.1) -> List[Dict[str, Any]]:
         """
         Search memories using simple text matching (no ML required).
         This is a lightweight alternative to semantic search.
@@ -100,11 +100,23 @@ class LightweightMemoryManager:
         # Sort by score (highest first) and return top results
         scored_memories.sort(key=lambda x: x['score'], reverse=True)
         
+        # Filter by minimum relevance
+        filtered_memories = [m for m in scored_memories if m['score'] >= min_relevance]
+        
         # Update access count for returned memories
-        for memory in scored_memories[:limit]:
+        for memory in filtered_memories[:top_k]:
             self._update_access_count(memory['id'])
         
-        return scored_memories[:limit]
+        # Return results in the expected format
+        results = []
+        for memory in filtered_memories[:top_k]:
+            results.append({
+                'memory': memory,
+                'relevance_score': memory['score'],
+                'final_score': memory['score']
+            })
+        
+        return results
     
     def get_memory(self, memory_id: str) -> Optional[Dict[str, Any]]:
         """Get a specific memory by ID"""
@@ -161,6 +173,52 @@ class LightweightMemoryManager:
             'total_access_count': total_access,
             'average_access_count': total_access / len(self.memories) if self.memories else 0
         }
+    
+    def reload_from_disk(self):
+        """Reload memories from disk (for compatibility)"""
+        self.load_memories()
+    
+    def _get_all_memories_flat(self) -> List[Dict[str, Any]]:
+        """Get all memories in flat format (for compatibility)"""
+        return self.memories
+    
+    def _calculate_all_scores_and_connections(self, threshold: float = 0.3):
+        """Calculate memory connections (simplified for lightweight version)"""
+        # For the lightweight version, we'll return minimal connections
+        # This is a simplified version that doesn't do complex similarity calculations
+        connections = []
+        sim_matrix = []
+        
+        n = len(self.memories)
+        for i in range(n):
+            row_connections = []
+            sim_row = []
+            
+            for j in range(n):
+                if i != j:
+                    # Simple similarity based on common words
+                    content_i = self.memories[i]['content'].lower()
+                    content_j = self.memories[j]['content'].lower()
+                    
+                    words_i = set(content_i.split())
+                    words_j = set(content_j.split())
+                    
+                    if words_i and words_j:
+                        similarity = len(words_i.intersection(words_j)) / len(words_i.union(words_j))
+                    else:
+                        similarity = 0
+                    
+                    sim_row.append(similarity)
+                    
+                    if similarity >= threshold:
+                        row_connections.append((j, similarity))
+                else:
+                    sim_row.append(1.0)  # Self-similarity
+            
+            connections.append(row_connections)
+            sim_matrix.append(sim_row)
+        
+        return connections, sim_matrix
 
 # Alias for compatibility
 MemoryManager = LightweightMemoryManager 

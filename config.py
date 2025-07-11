@@ -27,6 +27,11 @@ class Config:
         self.memory_manager = None
         self.memory_json_path = 'memory_data.json'
         
+        # Memory search configuration
+        self.min_relevance_threshold = 0.3  # Minimum relevance score for memory matching
+        self.max_search_results = 10        # Maximum number of search results to return
+        self.max_injected_memories = 3      # Maximum number of memories to inject into prompts
+        
         # Initialize memory system
         self._initialize_memory_system()
     
