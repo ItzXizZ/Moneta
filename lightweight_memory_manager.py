@@ -1,7 +1,18 @@
 #!/usr/bin/env python3
 """
-Lightweight Memory Manager for deployment without heavy ML dependencies.
-This version provides basic memory functionality using simple text matching.
+DEPRECATED: Lightweight Memory Manager (Fallback Only)
+
+⚠️  This is a lightweight fallback version used only when ML dependencies are unavailable.
+    The full-featured memory manager (memory-app/backend/memory_manager.py) is preferred
+    and provides much more advanced capabilities:
+    
+    - Semantic search with sentence-transformers
+    - Advanced reinforcement learning
+    - Multi-degree connection graphs
+    - Sophisticated scoring algorithms
+    - Dynamic memory reinforcement
+    
+    This lightweight version provides basic memory functionality using simple text matching.
 """
 
 import json
@@ -12,8 +23,9 @@ from typing import List, Dict, Any, Optional
 
 class LightweightMemoryManager:
     """
-    A lightweight memory manager that provides basic memory functionality
-    without requiring heavy ML libraries like sentence-transformers or scikit-learn.
+    ⚠️  DEPRECATED: A lightweight memory manager that provides basic memory functionality
+    without requiring heavy ML libraries. This is only used as a fallback when the full
+    ML-powered memory manager is not available.
     """
     
     def __init__(self, memory_file='memory_data.json'):
