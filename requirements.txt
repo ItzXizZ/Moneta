@@ -2,9 +2,7 @@
 Flask==2.3.3
 Flask-Cors==4.0.0
 
-# Data science and ML dependencies
-scikit-learn
-sentence-transformers
+# Lightweight data processing
 numpy
 
 # Environment and configuration
@@ -22,4 +20,8 @@ supabase==2.16.0
 # Additional dependencies for cloud deployment
 gunicorn
 requests
-urllib3 
+urllib3
+
+# Lightweight ML alternative (if needed)
+# scikit-learn-intelex  # Intel optimized version - much lighter
+# sentence-transformers  # Removed - too heavy for deployment 

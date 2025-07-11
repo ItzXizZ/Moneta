@@ -33,7 +33,7 @@ class Config:
     def _initialize_memory_system(self):
         """Initialize the memory management system"""
         try:
-            # Try to import and initialize memory manager
+            # Try to import the full memory manager first
             import sys
             import os
             sys.path.append(os.path.join(os.path.dirname(__file__), 'memory-app', 'backend'))
@@ -41,10 +41,18 @@ class Config:
             
             self.memory_manager = MemoryManager()
             self.memory_available = True
-            print("✅ Memory system initialized successfully")
+            print("✅ Full memory system initialized successfully")
         except ImportError as e:
-            print(f"⚠️  Memory system not available: {e}")
-            self.memory_available = False
+            print(f"⚠️  Full memory system not available: {e}")
+            # Fallback to lightweight memory manager
+            try:
+                from lightweight_memory_manager import LightweightMemoryManager
+                self.memory_manager = LightweightMemoryManager()
+                self.memory_available = True
+                print("✅ Lightweight memory system initialized successfully")
+            except Exception as e2:
+                print(f"❌ Error initializing lightweight memory system: {e2}")
+                self.memory_available = False
         except Exception as e:
             print(f"❌ Error initializing memory system: {e}")
             self.memory_available = False
