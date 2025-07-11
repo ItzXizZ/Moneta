@@ -1429,7 +1429,13 @@ MEMORY_NETWORK_JAVASCRIPT = '''
         const container = document.getElementById('memory-network');
         const containerRect = container.getBoundingClientRect();
         
-        const size = Math.max(60, 120 * glowLevel);
+        // Get the actual node size for proportional glow
+        const node = networkData.nodes.find(n => n.id === nodeId);
+        const nodeSize = node ? node.size : 35; // Default size if node not found
+        
+        // Make glow proportional to node size (1.5x to 2.5x the node size)
+        const glowMultiplier = 1.5 + (glowLevel * 1.0); // Range: 1.5x to 2.5x
+        const size = Math.max(nodeSize * glowMultiplier, 60); // Minimum 60px for visibility
         
         const x = containerRect.left + nodePos.x - size/2;
         const y = containerRect.top + nodePos.y - size/2;
@@ -1452,7 +1458,13 @@ MEMORY_NETWORK_JAVASCRIPT = '''
         for (let i = 0; i < Math.ceil(strength * 2); i++) {
             setTimeout(() => {
                 const pulse = document.createElement('div');
-                const size = 80 * strength;
+                // Get the actual node size for proportional pulse
+                const node = networkData.nodes.find(n => n.id === nodeId);
+                const nodeSize = node ? node.size : 35; // Default size if node not found
+                
+                // Make pulse proportional to node size (1.2x to 2.0x the node size)
+                const pulseMultiplier = 1.2 + (strength * 0.8); // Range: 1.2x to 2.0x
+                const size = Math.max(nodeSize * pulseMultiplier, 50); // Minimum 50px for visibility
                 
                 pulse.style.position = 'fixed';
                 pulse.style.left = (containerRect.left + nodePos.x - size/2) + 'px';
@@ -1482,7 +1494,13 @@ MEMORY_NETWORK_JAVASCRIPT = '''
         const containerRect = container.getBoundingClientRect();
         
         const vibration = document.createElement('div');
-        const size = Math.max(40, 60 * strength);
+        // Get the actual node size for proportional vibration
+        const node = networkData.nodes.find(n => n.id === nodeId);
+        const nodeSize = node ? node.size : 35; // Default size if node not found
+        
+        // Make vibration proportional to node size (1.0x to 1.8x the node size)
+        const vibrationMultiplier = 1.0 + (strength * 0.8); // Range: 1.0x to 1.8x
+        const size = Math.max(nodeSize * vibrationMultiplier, 40); // Minimum 40px for visibility
         
         vibration.style.position = 'fixed';
         vibration.style.left = (containerRect.left + nodePos.x - size/2) + 'px';

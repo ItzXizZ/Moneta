@@ -341,5 +341,91 @@
       "sender": "assistant",
       "timestamp": "2025-07-11T00:04:41.602005"
     }
+  ],
+  "de764827-e5e6-441d-8fab-6a4658a5a3a0": [
+    {
+      "id": "293aeb71-f94d-4edd-a2eb-dc5a73e7d9bc",
+      "content": "Hey there!",
+      "sender": "user",
+      "timestamp": "2025-07-11T12:50:37.007591"
+    },
+    {
+      "id": "47860258-7561-49b3-91e4-d50a6105764e",
+      "content": "I apologize, but I encountered an error: OpenAI API key not configured. Please set OPENAI_API_KEY in your .env file.",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T12:50:37.008338"
+    },
+    {
+      "id": "e4346b7a-4e6d-4d49-a3aa-3eca5e55a5be",
+      "content": "hi there",
+      "sender": "user",
+      "timestamp": "2025-07-11T12:53:16.402866"
+    },
+    {
+      "id": "9045aa73-d794-46f9-8009-e54ea2b07dc5",
+      "content": "I apologize, but I encountered an error: OpenAI API key not configured. Please set OPENAI_API_KEY in your .env file.",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T12:53:16.403613"
+    },
+    {
+      "id": "56249246-8e05-439c-b599-e5d7faeed0a5",
+      "content": "hi",
+      "sender": "user",
+      "timestamp": "2025-07-11T12:54:06.182580"
+    },
+    {
+      "id": "abf76e78-0194-48d0-a23b-936d6424a352",
+      "content": "Hello Ethan! How can I assist you today?",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T12:54:09.949404"
+    },
+    {
+      "id": "ac678016-7975-490a-bead-6a683fa04a71",
+      "content": "I love iron man",
+      "sender": "user",
+      "timestamp": "2025-07-11T13:05:36.567069"
+    },
+    {
+      "id": "7ea9c010-f06b-472b-9960-c4b0671d6879",
+      "content": "That's awesome to hear! Iron Man is such a cool character in the Marvel universe. Do you have a favorite Iron Man movie or moment from the films?",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T13:05:38.293754"
+    },
+    {
+      "id": "460f85ea-7aba-4eff-9247-9a09a15ceac9",
+      "content": "I like engineering",
+      "sender": "user",
+      "timestamp": "2025-07-11T13:05:58.886907"
+    },
+    {
+      "id": "e9508f08-0b5b-4959-a5fe-5e8481cd4c6d",
+      "content": "That's fantastic! Engineering is such a fascinating field with endless possibilities. Is there a specific area of engineering that you are most interested in pursuing?",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T13:06:00.455618"
+    },
+    {
+      "id": "96c9f887-4a44-4591-987a-645d50d636fd",
+      "content": "you know I really like shorter conversations",
+      "sender": "user",
+      "timestamp": "2025-07-11T13:08:04.563050"
+    },
+    {
+      "id": "e4340b5a-a422-46e7-9d97-c9afea87ef96",
+      "content": "Got it! I'll keep it short and sweet. How can I assist you today?",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T13:08:06.345358"
+    },
+    {
+      "id": "e566af59-259e-49b9-b592-a7895d0a815c",
+      "content": "I really like Tony Sarkj",
+      "sender": "user",
+      "timestamp": "2025-07-11T13:08:18.312755"
+    },
+    {
+      "id": "e3e56991-5704-4b9b-8ac5-cbd950bd91f9",
+      "content": "It's great to hear that you're a fan of Tony Stark, aka Iron Man! His character has certainly left a lasting impact on many fans. Is there a particular trait or moment of Tony Stark's that resonates with you the most?",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T13:08:19.820594"
+    }
   ]
 }

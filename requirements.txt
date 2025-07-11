@@ -1,0 +1,20 @@
+# Core Flask dependencies
+Flask==2.3.3
+Flask-Cors==4.0.0
+
+# Data science and ML dependencies
+scikit-learn
+sentence-transformers
+numpy
+
+# Environment and configuration
+python-dotenv==1.0.0
+
+# OpenAI API
+openai
+
+# File monitoring
+watchdog
+
+# Cloud database (Supabase)
+supabase==2.16.0 
