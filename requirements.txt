@@ -17,4 +17,9 @@ openai
 watchdog
 
 # Cloud database (Supabase)
-supabase==2.16.0 
+supabase==2.16.0
+
+# Additional dependencies for cloud deployment
+gunicorn
+requests
+urllib3 
