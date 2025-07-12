@@ -1,9 +1,10 @@
 #!/usr/bin/env python3
 
-from flask import Flask, render_template_string
+from flask import Flask, render_template_string, redirect, url_for
 from config import config
 from api.chat_routes import register_chat_routes
 from api.memory_routes import register_memory_routes
+from api.auth_routes import register_auth_routes
 from ui.chat_interface import CHAT_INTERFACE_TEMPLATE
 from ui.memory_network_ui import MEMORY_NETWORK_UI_TEMPLATE, MEMORY_NETWORK_CSS
 from ui.chat_javascript import CHAT_JAVASCRIPT
@@ -11,6 +12,7 @@ from ui.memory_network_javascript import MEMORY_NETWORK_JAVASCRIPT
 from utils.file_watcher import setup_file_watcher
 
 app = Flask(__name__)
+app.secret_key = config.jwt_secret if hasattr(config, 'jwt_secret') else 'your-secret-key-here'
 
 # Combine all UI components into the complete template
 COMPLETE_TEMPLATE = CHAT_INTERFACE_TEMPLATE.replace(
@@ -26,12 +28,13 @@ COMPLETE_TEMPLATE = CHAT_INTERFACE_TEMPLATE.replace(
     f'{CHAT_JAVASCRIPT}{MEMORY_NETWORK_JAVASCRIPT}</body>'
 )
 
-@app.route('/')
-def index():
-    """Main page route"""
+@app.route('/chat')
+def chat_interface():
+    """Chat interface route (requires authentication)"""
     return render_template_string(COMPLETE_TEMPLATE)
 
 # Register all API routes
+register_auth_routes(app)  # Authentication routes (includes landing page at /)
 register_chat_routes(app)
 register_memory_routes(app)
 

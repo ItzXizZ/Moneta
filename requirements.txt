@@ -27,4 +27,8 @@ urllib3
 # Additional ML and data processing libraries
 torch
 transformers
-scipy 
+scipy
+
+# Authentication and security
+PyJWT
+bcrypt 
