@@ -1,0 +1,431 @@
+{
+  "a352477a-bd63-4409-96ba-a2f220f0b2cf": [
+    {
+      "id": "2eed8e7c-1899-4e00-ad74-b3eb98f7538b",
+      "content": "hi",
+      "sender": "user",
+      "timestamp": "2025-07-01T10:49:02.926251"
+    },
+    {
+      "id": "dc175038-f56f-4ec9-9848-8547006e97a1",
+      "content": "Hello! How can I assist you today, Ethan Curtis?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T10:49:04.681040"
+    },
+    {
+      "id": "45916faa-3221-4ea2-b8a4-b8542eb11024",
+      "content": "what's up",
+      "sender": "user",
+      "timestamp": "2025-07-01T10:49:14.574245"
+    },
+    {
+      "id": "064af0bf-3dac-4d20-a661-1438783cc308",
+      "content": "Not much, just here to help you out like we talked about last time. Remember our chat about finding new recipes to try out together? If you're up for it, I can help you discover some exciting dishes to cook! Just let me know what you're in the mood for.",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T10:49:20.113778"
+    },
+    {
+      "id": "0a2bf609-aa47-4ec4-88a4-f1ef198fd93e",
+      "content": "hey, please talk shorter",
+      "sender": "user",
+      "timestamp": "2025-07-01T10:49:28.001874"
+    },
+    {
+      "id": "ced06680-5b56-4026-8125-b48a3357e90e",
+      "content": "Got it, Ethan! How can I help you today?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T10:49:29.391439"
+    },
+    {
+      "id": "adc87638-4d92-470e-bcf6-0d703e69bca0",
+      "content": "hi",
+      "sender": "user",
+      "timestamp": "2025-07-01T11:55:03.068798"
+    },
+    {
+      "id": "c93c08fb-c0bd-40fa-b1bf-85bfa94f8ddc",
+      "content": "Hello again, Ethan! How can I assist you today?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T11:55:05.142795"
+    },
+    {
+      "id": "3f7d75b1-c19f-47f5-b0e4-d36766e53fb8",
+      "content": "what's up",
+      "sender": "user",
+      "timestamp": "2025-07-01T11:55:25.555605"
+    },
+    {
+      "id": "81f87afa-4a95-463e-b5c1-f18940209868",
+      "content": "Not much, just here to help you out. Is there anything specific you'd like assistance with today?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T11:55:30.887325"
+    },
+    {
+      "id": "130ef5f3-a1ce-40d1-a637-cc509c4a6a61",
+      "content": "I love software",
+      "sender": "user",
+      "timestamp": "2025-07-01T11:57:20.511362"
+    },
+    {
+      "id": "22c47e91-4d6e-4725-be73-85fe0ec6e20c",
+      "content": "That's great to hear, Ethan! It's wonderful to have a passion for software. Is there a particular aspect of software that you enjoy the most, like coding, design, or problem-solving? Let me know if you'd like to discuss anything related to software!",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T11:57:28.002379"
+    }
+  ],
+  "3f3051d6-a2ea-4956-b5cf-a981af0e42fb": [],
+  "28fa7677-f6ee-404e-b801-47a7aa187ecf": [
+    {
+      "id": "858d3816-0b5d-4166-a7e4-f65487fd3f9e",
+      "content": "Hey!",
+      "sender": "user",
+      "timestamp": "2025-07-01T18:25:42.492546"
+    },
+    {
+      "id": "27a65726-3dc5-439f-be85-fcb42302ee4e",
+      "content": "Hello! How can I assist you today?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T18:25:50.339593"
+    },
+    {
+      "id": "ad452384-2bc4-424f-bc42-f9e4dd2cc276",
+      "content": "My name's Ethan",
+      "sender": "user",
+      "timestamp": "2025-07-01T18:25:56.761878"
+    },
+    {
+      "id": "07b63410-a388-41dd-9303-86a15c72003b",
+      "content": "Nice to meet you, Ethan! How can I help you today?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T18:25:58.726191"
+    },
+    {
+      "id": "aa912d3e-6e3e-4a3d-a787-75d4eedce445",
+      "content": "I really enjoy pizza! What do you think about that?",
+      "sender": "user",
+      "timestamp": "2025-07-01T18:26:37.130457"
+    },
+    {
+      "id": "89946e07-ba92-4d12-9da8-6f0f6eaa21da",
+      "content": "I think it's great that you enjoy pizza, Ethan! It's a popular and delicious choice for many people. Do you have a favorite type of pizza or topping combination?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T18:26:43.049148"
+    },
+    {
+      "id": "92fbe3c1-25bd-4fdf-9c68-0b78c0302d8a",
+      "content": "Hey, remember your preferences",
+      "sender": "user",
+      "timestamp": "2025-07-01T18:27:01.512811"
+    },
+    {
+      "id": "5b0532ba-ed74-4d97-8c06-cc9ae49abc0c",
+      "content": "I'm here to assist you, Ethan! Feel free to let me know if there's anything specific you'd like help with or if there are any preferences you'd like me to remember. Just tell me how I can assist you today!",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T18:27:07.381796"
+    },
+    {
+      "id": "d2271593-5466-488d-8f65-18bfb2d593bb",
+      "content": "no like I mean I want your responses to be sufficiently concise",
+      "sender": "user",
+      "timestamp": "2025-07-01T18:27:19.488851"
+    },
+    {
+      "id": "0387fed8-5d0b-4e42-90d6-88fbeba36fe4",
+      "content": "Got it, Ethan! I'll aim to provide you with short and to-the-point responses. Just let me know how I can assist you further!",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T18:27:21.267923"
+    },
+    {
+      "id": "db2d65b8-3766-4650-8bdf-803a0ddd2ed6",
+      "content": "I want you to respond more like a human and with more perplixity and suddenness you feel?",
+      "sender": "user",
+      "timestamp": "2025-07-01T18:28:28.509453"
+    },
+    {
+      "id": "d9e898d7-d8d1-4214-a041-f344ad22b1d7",
+      "content": "I hear you, Ethan! I'll aim to respond with a bit more human-like flair and spontaneity in our interactions. Feel free to share anything else you'd like me to keep in mind as we chat!",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T18:28:29.897294"
+    },
+    {
+      "id": "ca120104-ba59-45ab-b83d-b75e91e7a00f",
+      "content": "What do you know about me?",
+      "sender": "user",
+      "timestamp": "2025-07-01T18:28:38.262442"
+    },
+    {
+      "id": "e5fbe155-028e-4ed5-ac7e-515cc26330e6",
+      "content": "As an AI assistant, I don't have access to personal information about individuals unless it has been shared with me in the course of our conversation. I'm here to assist you with any questions or tasks you have, Ethan. Just let me know how I can help!",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T18:28:43.911690"
+    },
+    {
+      "id": "a3c6bbee-477e-4f52-b7ae-79a63e25ec7f",
+      "content": "In general what do I like?",
+      "sender": "user",
+      "timestamp": "2025-07-01T18:28:58.327033"
+    },
+    {
+      "id": "af6769cb-028a-406f-a3a6-49bbc4c61092",
+      "content": "Based on our conversation, it seems like you enjoy pizza and appreciate concise responses that are more human-like and spontaneous. Is there anything else you'd like to share about your interests or preferences, Ethan?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T18:29:03.517778"
+    },
+    {
+      "id": "3ee53f25-70f9-4a04-887e-c1ac6dea6790",
+      "content": "I do like marvel movies too",
+      "sender": "user",
+      "timestamp": "2025-07-01T18:29:12.004561"
+    },
+    {
+      "id": "c0cd288b-6c4f-4773-a01f-4284b4f55405",
+      "content": "That's great to know, Ethan! Marvel movies offer a fantastic cinematic universe with so many exciting characters and storylines. Do you have a favorite Marvel movie or character?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T18:29:14.240662"
+    },
+    {
+      "id": "af9968db-0a10-46de-a418-1b36937ca130",
+      "content": "I want to be like iron man / engineer when I grow up",
+      "sender": "user",
+      "timestamp": "2025-07-01T18:29:29.336371"
+    },
+    {
+      "id": "8231113a-38c3-4968-84e4-82e9a1d9cf55",
+      "content": "It's awesome that you aspire to be like Iron Man and pursue a career in engineering, Ethan! Tony Stark's ingenuity and technological prowess are truly inspiring. If you have any questions or need guidance on your path to becoming an engineer, feel free to ask!",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T18:29:30.931738"
+    }
+  ],
+  "bd0b0faf-8b27-4479-aad4-f26281170410": [
+    {
+      "id": "c2782e62-2f1f-4a57-b55a-efb290739bca",
+      "content": "hello",
+      "sender": "user",
+      "timestamp": "2025-07-01T18:31:23.187625"
+    },
+    {
+      "id": "f0245864-61e6-4eda-9001-260ad1ffdc13",
+      "content": "Hello! How can I assist you today?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T18:31:28.605368"
+    },
+    {
+      "id": "2bac504d-ac79-456d-9b0e-1c81c511475f",
+      "content": "i like pizza",
+      "sender": "user",
+      "timestamp": "2025-07-01T18:31:41.051830"
+    },
+    {
+      "id": "9c53f459-d83e-40ab-be8c-14534e1e33e1",
+      "content": "That's great to hear! Pizza is such a versatile and delicious food. Do you have a favorite type of pizza or topping combination?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T18:31:43.567702"
+    },
+    {
+      "id": "0b933434-fa13-4655-a350-1b3e114a7619",
+      "content": "I like bread",
+      "sender": "user",
+      "timestamp": "2025-07-01T18:32:08.355875"
+    },
+    {
+      "id": "3cc52588-3d8d-4f5b-8a31-c5b2b3e1eb0c",
+      "content": "Bread is a wonderful food too! It's a staple in many cuisines and can be enjoyed in a variety of ways. Do you have a favorite type of bread or a specific way you like to eat it?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T18:32:10.640684"
+    },
+    {
+      "id": "7d10c77e-f4fa-400d-8176-a7f1f9973d47",
+      "content": "I really want to be like iron man",
+      "sender": "user",
+      "timestamp": "2025-07-01T19:08:10.579187"
+    },
+    {
+      "id": "9b44c23a-fda5-44c1-8caf-595f1367756e",
+      "content": "That's an inspiring goal! Iron Man, also known as Tony Stark, is a brilliant engineer and inventor with a unique blend of intelligence, creativity, and charisma. It's great that you aspire to follow in his footsteps. Is there a particular aspect of Iron Man's character or skills that you find most appealing?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T19:08:13.413426"
+    },
+    {
+      "id": "9757dfdf-bd67-4369-9546-25bd42f0f3ce",
+      "content": "I love pizza",
+      "sender": "user",
+      "timestamp": "2025-07-01T19:25:44.412345"
+    },
+    {
+      "id": "bc26068c-8fcf-4b1c-a1c0-6c2fb04d37a8",
+      "content": "Pizza is definitely a crowd-pleaser! With so many topping options and styles to choose from, there's a pizza for everyone. Do you have a favorite type of pizza or a go-to topping combination that you enjoy the most?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T19:25:47.811752"
+    },
+    {
+      "id": "483ae45d-488d-45b5-9b0a-c88daca2f51a",
+      "content": "I like marvel",
+      "sender": "user",
+      "timestamp": "2025-07-01T19:26:04.729897"
+    },
+    {
+      "id": "d6af90a1-610c-4fdb-823a-e80e517b6c1d",
+      "content": "That's awesome! Marvel movies have brought so many iconic characters and thrilling stories to life on the big screen. Is there a particular Marvel movie or character that stands out as your favorite?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T19:26:06.743452"
+    },
+    {
+      "id": "e0be6f30-56fb-4ac5-9b8c-705f42bed71c",
+      "content": "I like marve",
+      "sender": "user",
+      "timestamp": "2025-07-01T19:26:31.498680"
+    },
+    {
+      "id": "09907051-8990-43bd-8766-b2ba4749d6ac",
+      "content": "Marvel has created a vast and captivating universe with its comics, movies, and characters. Is there a specific Marvel character or storyline that you find most interesting or exciting?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T19:26:33.638056"
+    },
+    {
+      "id": "b7bae433-2a3f-4532-87ba-120989a85d4c",
+      "content": "I like marvel",
+      "sender": "user",
+      "timestamp": "2025-07-01T19:26:40.911249"
+    },
+    {
+      "id": "3e333354-a85a-4f7a-a434-d3172694dab2",
+      "content": "It's clear you have a strong affinity for Marvel content! The Marvel universe is full of action, heroism, and complex characters. Do you have a favorite Marvel movie or character that you particularly enjoy watching or reading about?",
+      "sender": "assistant",
+      "timestamp": "2025-07-01T19:26:43.001805"
+    },
+    {
+      "id": "e16fba3a-bc82-430a-8383-fcf58dd14cfc",
+      "content": "I love sharks",
+      "sender": "user",
+      "timestamp": "2025-07-10T23:59:49.409749"
+    },
+    {
+      "id": "5ddda029-7de8-4548-9d65-9c04f6fcfd36",
+      "content": "I apologize, but I encountered an error: 'NoneType' object has no attribute 'chat'. Please try again.",
+      "sender": "assistant",
+      "timestamp": "2025-07-10T23:59:49.955668"
+    },
+    {
+      "id": "94facb84-ffd0-4643-a216-83b4540446ae",
+      "content": "hi",
+      "sender": "user",
+      "timestamp": "2025-07-10T23:59:53.848913"
+    },
+    {
+      "id": "934bdaf2-81eb-4cb7-acb1-e9e5d2045aea",
+      "content": "I apologize, but I encountered an error: 'NoneType' object has no attribute 'chat'. Please try again.",
+      "sender": "assistant",
+      "timestamp": "2025-07-10T23:59:58.397314"
+    },
+    {
+      "id": "06861263-9872-46df-8843-bc71e01396f1",
+      "content": "hi",
+      "sender": "user",
+      "timestamp": "2025-07-11T00:04:25.668992"
+    },
+    {
+      "id": "03861111-992f-4d0b-b2de-e18ff5217e94",
+      "content": "Hello! How can I assist you today?",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T00:04:32.009530"
+    },
+    {
+      "id": "8151e10f-9eba-4952-9668-41d0084b2307",
+      "content": "i like iron man",
+      "sender": "user",
+      "timestamp": "2025-07-11T00:04:39.204073"
+    },
+    {
+      "id": "b7b909a6-1511-4889-b6fd-18d69d7440c5",
+      "content": "That's fantastic! Iron Man is such a charismatic and iconic character in the Marvel universe. What is it about Iron Man that resonates with you the most?",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T00:04:41.602005"
+    }
+  ],
+  "de764827-e5e6-441d-8fab-6a4658a5a3a0": [
+    {
+      "id": "293aeb71-f94d-4edd-a2eb-dc5a73e7d9bc",
+      "content": "Hey there!",
+      "sender": "user",
+      "timestamp": "2025-07-11T12:50:37.007591"
+    },
+    {
+      "id": "47860258-7561-49b3-91e4-d50a6105764e",
+      "content": "I apologize, but I encountered an error: OpenAI API key not configured. Please set OPENAI_API_KEY in your .env file.",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T12:50:37.008338"
+    },
+    {
+      "id": "e4346b7a-4e6d-4d49-a3aa-3eca5e55a5be",
+      "content": "hi there",
+      "sender": "user",
+      "timestamp": "2025-07-11T12:53:16.402866"
+    },
+    {
+      "id": "9045aa73-d794-46f9-8009-e54ea2b07dc5",
+      "content": "I apologize, but I encountered an error: OpenAI API key not configured. Please set OPENAI_API_KEY in your .env file.",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T12:53:16.403613"
+    },
+    {
+      "id": "56249246-8e05-439c-b599-e5d7faeed0a5",
+      "content": "hi",
+      "sender": "user",
+      "timestamp": "2025-07-11T12:54:06.182580"
+    },
+    {
+      "id": "abf76e78-0194-48d0-a23b-936d6424a352",
+      "content": "Hello Ethan! How can I assist you today?",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T12:54:09.949404"
+    },
+    {
+      "id": "ac678016-7975-490a-bead-6a683fa04a71",
+      "content": "I love iron man",
+      "sender": "user",
+      "timestamp": "2025-07-11T13:05:36.567069"
+    },
+    {
+      "id": "7ea9c010-f06b-472b-9960-c4b0671d6879",
+      "content": "That's awesome to hear! Iron Man is such a cool character in the Marvel universe. Do you have a favorite Iron Man movie or moment from the films?",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T13:05:38.293754"
+    },
+    {
+      "id": "460f85ea-7aba-4eff-9247-9a09a15ceac9",
+      "content": "I like engineering",
+      "sender": "user",
+      "timestamp": "2025-07-11T13:05:58.886907"
+    },
+    {
+      "id": "e9508f08-0b5b-4959-a5fe-5e8481cd4c6d",
+      "content": "That's fantastic! Engineering is such a fascinating field with endless possibilities. Is there a specific area of engineering that you are most interested in pursuing?",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T13:06:00.455618"
+    },
+    {
+      "id": "96c9f887-4a44-4591-987a-645d50d636fd",
+      "content": "you know I really like shorter conversations",
+      "sender": "user",
+      "timestamp": "2025-07-11T13:08:04.563050"
+    },
+    {
+      "id": "e4340b5a-a422-46e7-9d97-c9afea87ef96",
+      "content": "Got it! I'll keep it short and sweet. How can I assist you today?",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T13:08:06.345358"
+    },
+    {
+      "id": "e566af59-259e-49b9-b592-a7895d0a815c",
+      "content": "I really like Tony Sarkj",
+      "sender": "user",
+      "timestamp": "2025-07-11T13:08:18.312755"
+    },
+    {
+      "id": "e3e56991-5704-4b9b-8ac5-cbd950bd91f9",
+      "content": "It's great to hear that you're a fan of Tony Stark, aka Iron Man! His character has certainly left a lasting impact on many fans. Is there a particular trait or moment of Tony Stark's that resonates with you the most?",
+      "sender": "assistant",
+      "timestamp": "2025-07-11T13:08:19.820594"
+    }
+  ]
+}

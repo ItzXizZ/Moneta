@@ -1,0 +1,1481 @@
+    <!DOCTYPE html>
+    <html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Memory Network Visualization</title>
+        <script src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+        <style>
+            /* Purple Gradient Palette */
+            :root {
+                --primary-50: #faf5ff;
+                --primary-100: #f3e8ff;
+                --primary-200: #e9d5ff;
+                --primary-300: #d8b4fe;
+                --primary-400: #c084fc;
+                --primary-500: #a855f7;
+                --primary-600: #9333ea;
+                --primary-700: #7c3aed;
+                --primary-800: #6b21a8;
+                --primary-900: #581c87;
+                
+                --gray-50: #f9fafb;
+                --gray-100: #f3f4f6;
+                --gray-200: #e5e7eb;
+                --gray-300: #d1d5db;
+                --gray-400: #9ca3af;
+                --gray-500: #6b7280;
+                --gray-600: #4b5563;
+                --gray-700: #374151;
+                --gray-800: #1f2937;
+                --gray-900: #111827;
+                --gray-950: #0a0a0a;
+                
+                --glass-bg: rgba(31, 41, 55, 0.7);
+                --glass-border: rgba(168, 85, 247, 0.2);
+                --glass-blur: blur(20px);
+            }
+
+            * {
+                box-sizing: border-box;
+            }
+
+                    body {
+            background: linear-gradient(135deg, 
+                var(--gray-950) 0%, 
+                var(--gray-900) 25%, 
+                #0f0f23 50%,
+                var(--gray-900) 75%, 
+                var(--gray-950) 100%);
+            background-attachment: fixed;
+            color: var(--gray-100);
+            font-family: -apple-system, SF Pro Display, SF Pro Text, Helvetica Neue, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow-x: hidden;
+        }
+
+                    .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+            height: 100vh;
+            padding: 20px;
+        }
+
+            .header {
+                text-align: center;
+                background: var(--glass-bg);
+                backdrop-filter: var(--glass-blur);
+                border: 1px solid var(--glass-border);
+                border-radius: 16px;
+                padding: 20px;
+                box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            }
+
+            .header h1 {
+                margin: 0 0 10px 0;
+                background: linear-gradient(45deg, var(--primary-400), var(--primary-600));
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                background-clip: text;
+                font-size: 2rem;
+            }
+
+            .controls {
+                display: flex;
+                gap: 15px;
+                flex-wrap: wrap;
+                justify-content: center;
+                background: var(--glass-bg);
+                backdrop-filter: var(--glass-blur);
+                border: 1px solid var(--glass-border);
+                border-radius: 12px;
+                padding: 15px;
+            }
+
+            button {
+                background: var(--glass-bg);
+                backdrop-filter: var(--glass-blur);
+                border: 1px solid var(--glass-border);
+                border-radius: 8px;
+                padding: 10px 20px;
+                color: var(--gray-200);
+                font-weight: 500;
+                cursor: pointer;
+                transition: all 0.3s ease;
+                box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            }
+
+            button:hover {
+                background: rgba(168, 85, 247, 0.2);
+                border-color: var(--primary-400);
+                color: var(--primary-200);
+                transform: translateY(-2px);
+                box-shadow: 0 4px 8px rgba(168, 85, 247, 0.2);
+            }
+
+                    .memory-network-container {
+            background: var(--glass-bg);
+            backdrop-filter: var(--glass-blur);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            padding: 20px;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+            flex: 1;
+            height: calc(100vh - 300px);
+            min-height: 700px;
+            display: flex;
+            flex-direction: column;
+        }
+
+            .memory-network-header {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                margin-bottom: 15px;
+            }
+
+            .memory-network-header h3 {
+                color: var(--primary-300);
+                margin: 0;
+                font-size: 1.2rem;
+                font-weight: 500;
+            }
+
+            .threshold-controls {
+                display: flex;
+                gap: 10px;
+                align-items: center;
+            }
+
+            .threshold-slider {
+                background: var(--gray-700);
+                border: 1px solid var(--glass-border);
+                border-radius: 8px;
+                padding: 5px 10px;
+                color: var(--gray-200);
+                font-size: 0.9rem;
+            }
+
+            .memory-network-stats {
+                display: flex;
+                gap: 10px;
+                margin-bottom: 15px;
+                font-size: 0.85rem;
+                color: var(--gray-400);
+                flex-wrap: wrap;
+            }
+
+            .stat-item {
+                background: rgba(31, 41, 55, 0.8);
+                backdrop-filter: var(--glass-blur);
+                padding: 8px 12px;
+                border-radius: 8px;
+                border: 1px solid var(--glass-border);
+            }
+
+            .stat-value {
+                color: var(--primary-300);
+                font-weight: 500;
+            }
+
+                    #memory-network {
+            flex: 1;
+            border: 1px solid var(--glass-border);
+            border-radius: 12px;
+            background: radial-gradient(ellipse at center, rgba(10, 10, 10, 0.98) 0%, rgba(17, 24, 39, 0.95) 60%, rgba(5, 5, 5, 0.99) 100%);
+            backdrop-filter: var(--glass-blur);
+            position: relative;
+            overflow: hidden;
+            height: 100%;
+            width: 100%;
+            min-height: 600px;
+            box-shadow: 
+                inset 0 0 50px rgba(168, 85, 247, 0.1),
+                0 0 30px rgba(168, 85, 247, 0.15);
+        }
+
+            #memory-network::before {
+                content: '';
+                position: absolute;
+                top: 0;
+                left: 0;
+                right: 0;
+                bottom: 0;
+                background: 
+                    radial-gradient(circle at 20% 20%, rgba(255, 215, 0, 0.02) 0%, transparent 50%),
+                    radial-gradient(circle at 80% 80%, rgba(168, 85, 247, 0.03) 0%, transparent 50%),
+                    radial-gradient(circle at 40% 70%, rgba(255, 215, 0, 0.01) 0%, transparent 30%);
+                pointer-events: none;
+                z-index: 1;
+            }
+
+            .memory-activity-indicator {
+                position: absolute;
+                top: 15px;
+                right: 15px;
+                background: linear-gradient(45deg, #ffd700, #ffed4e);
+                color: #46096b;
+                padding: 8px 12px;
+                border-radius: 12px;
+                font-size: 0.85rem;
+                font-weight: 600;
+                opacity: 0;
+                transition: all 0.4s ease;
+                border: 2px solid rgba(255, 215, 0, 0.6);
+                box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+                z-index: 10;
+            }
+
+            .memory-activity-indicator.active {
+                opacity: 1;
+                animation: neuralPulse 1.5s ease-in-out infinite;
+            }
+
+            @keyframes neuralPulse {
+                0%, 100% { 
+                    transform: scale(1); 
+                    box-shadow: 0 0 15px rgba(255, 215, 0, 0.4);
+                }
+                50% { 
+                    transform: scale(1.05); 
+                    box-shadow: 0 0 25px rgba(255, 215, 0, 0.8);
+                }
+            }
+
+            .network-loading {
+                position: absolute;
+                top: 50%;
+                left: 50%;
+                transform: translate(-50%, -50%);
+                color: var(--gray-400);
+                font-style: italic;
+                z-index: 2;
+                display: none;
+            }
+
+            .persistent-node-glow {
+                transition: all 0.3s ease-out;
+                animation: gentle-pulse 3s ease-in-out infinite;
+            }
+
+            @keyframes gentle-pulse {
+                0%, 100% { 
+                    transform: scale(1); 
+                    opacity: var(--glow-opacity, 0.6); 
+                }
+                50% { 
+                    transform: scale(1.4); 
+                    opacity: calc(var(--glow-opacity, 1) * 1.8); 
+                }
+            }
+        </style>
+    </head>
+    <body>
+        <div class="container">
+            <div class="header">
+                <h1>🧠 Memory Network Visualization</h1>
+                <p>Interactive neural network with beautiful signal propagation effects</p>
+            </div>
+            
+            <div class="controls">
+                <button onclick="simulateMemoryRecall()">🔥 Simulate Memory Recall</button>
+                <button onclick="addRandomMemory()">➕ Add Random Memory</button>
+                <button onclick="clearNetwork()">🧹 Clear Network</button>
+                <button onclick="resetPhysics()">⚡ Reset Physics</button>
+                <button onclick="togglePhysics()">🔄 Toggle Physics</button>
+                <button onclick="spreadNodes()">📐 Spread Nodes</button>
+                <button onclick="debugNetwork()">🔍 Debug Size</button>
+                <button onclick="refreshMemoryNetworkManual()">🔄 Manual Refresh</button>
+                <button onclick="toggleAutoRefresh()" id="auto-refresh-toggle">Enable Auto-refresh</button>
+            </div>
+            
+            <div class="memory-network-container">
+                <div class="memory-network-header">
+                    <h3>Neural Memory Network</h3>
+                    <div class="threshold-controls">
+                        <label for="threshold-slider" style="color: var(--gray-400); font-size: 0.9rem;">Threshold:</label>
+                        <input type="range" id="threshold-slider" class="threshold-slider" min="0.1" max="0.8" step="0.05" value="0.35">
+                        <span id="threshold-value" style="color: var(--primary-400); font-size: 0.9rem;">0.35</span>
+                    </div>
+                </div>
+                
+                <div class="memory-network-stats">
+                    <div class="stat-item">
+                        <span>Memories: </span><span class="stat-value" id="memory-count">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Connections: </span><span class="stat-value" id="connection-count">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Active: </span><span class="stat-value" id="active-memories">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span>Last: </span><span class="stat-value" id="last-search">None</span>
+                    </div>
+                </div>
+                
+                <div id="memory-network">
+                    <div class="memory-activity-indicator" id="activity-indicator">🔥 Memory Activity</div>
+                </div>
+            </div>
+        </div>
+
+        <script>
+            // Global variables
+            let memoryNetwork = null;
+            let networkData = { nodes: [], edges: [] };
+            let activeMemories = new Set();
+            let currentThreshold = 0.35;
+            
+            // Position persistence and incremental updates
+            let savedNodePositions = {};
+            let lastNetworkHash = '';
+            let isInitialLoad = true;
+            
+            // Auto-refresh control
+            let autoRefreshEnabled = false;
+            let autoRefreshInterval = null;
+            
+            // Advanced Signal Trail System for Neural-like Visualization
+            let signalTrails = [];
+            let sparkleSystem = [];
+            let trailAnimationActive = false;
+            let nodeGlowLevels = {}; // Track accumulating glow for each node
+            let activeSignals = 0;
+
+            // Proportional Node Sizing System
+            function calculateProportionalNodeSize(score, allScores) {
+                // Safety check - if no scores or invalid score, return default size
+                if (!allScores || allScores.length === 0 || score === undefined || score === null) {
+                    return 35; // Safe default size
+                }
+                
+                // Ensure all scores are valid numbers
+                const validScores = allScores.filter(s => typeof s === 'number' && !isNaN(s) && s >= 0);
+                if (validScores.length === 0) {
+                    return 35; // Safe default size
+                }
+                
+                // Find min/max scores in the dataset
+                const minScore = Math.min(...validScores);
+                const maxScore = Math.max(...validScores);
+                
+                // If all scores are the same, return a reasonable default size
+                if (minScore === maxScore) {
+                    return 35;
+                }
+                
+                // Apply logarithmic scaling to handle infinite growth
+                const logMin = Math.log(minScore + 1);
+                const logMax = Math.log(maxScore + 1);
+                const logScore = Math.log(score + 1);
+                
+                // Calculate relative position (0-1)
+                const relativePosition = (logScore - logMin) / (logMax - logMin);
+                
+                // Apply sigmoid function for smooth distribution
+                const sigmoid = 1 / (1 + Math.exp(-10 * (relativePosition - 0.5)));
+                
+                // Map to size range with minimum visibility guarantee
+                const minSize = 25;  // Minimum visible size
+                const maxSize = 80;  // Maximum size cap
+                const sizeRange = maxSize - minSize;
+                
+                const calculatedSize = minSize + (sigmoid * sizeRange);
+                
+                // Ensure the size is within bounds and return
+                const finalSize = Math.max(minSize, Math.min(maxSize, calculatedSize));
+                
+                return finalSize;
+            }
+
+            // Sample memory data for testing
+            const sampleMemories = [
+                { id: 'mem1', content: 'I love pizza with mushrooms', score: 85, tags: ['food', 'preference'] },
+                { id: 'mem2', content: 'I work as a software developer', score: 92, tags: ['work', 'profession'] },
+                { id: 'mem3', content: 'I enjoy hiking on weekends', score: 78, tags: ['hobby', 'outdoor'] },
+                { id: 'mem4', content: 'I have a cat named Whiskers', score: 71, tags: ['pet', 'family'] },
+                { id: 'mem5', content: 'I prefer tea over coffee', score: 66, tags: ['drink', 'preference'] },
+                { id: 'mem6', content: 'I live in San Francisco', score: 88, tags: ['location', 'personal'] },
+                { id: 'mem7', content: 'I play guitar in my free time', score: 73, tags: ['hobby', 'music'] },
+                { id: 'mem8', content: 'I studied computer science', score: 95, tags: ['education', 'background'] },
+                { id: 'mem9', content: 'I like science fiction movies', score: 69, tags: ['entertainment', 'preference'] },
+                { id: 'mem10', content: 'I exercise at the gym regularly', score: 82, tags: ['health', 'routine'] }
+            ];
+
+            function initializeMemoryNetwork() {
+                const container = document.getElementById('memory-network');
+                
+                // Clear any loading text first
+                container.innerHTML = '<div class="memory-activity-indicator" id="activity-indicator">🔥 Memory Activity</div>';
+                
+                const options = {
+                    nodes: {
+                        shape: 'dot',
+                        scaling: {
+                            min: 20,
+                            max: 85
+                        },
+                        font: {
+                            size: 11,
+                            color: '#ffffff',
+                            face: '-apple-system, SF Pro Display, SF Pro Text, Helvetica Neue, Helvetica, Arial, sans-serif',
+                            strokeWidth: 0,
+                            strokeColor: 'transparent',
+                            align: 'center',
+                            vadjust: 0,
+                            multi: false,
+                            bold: {
+                                face: '-apple-system, SF Pro Display, SF Pro Text, Helvetica Neue, Helvetica, Arial, sans-serif',
+                                size: 11,
+                                color: '#ffffff'
+                            }
+                        },
+                        borderWidth: 1,
+                        borderWidthSelected: 2,
+                        shadow: {
+                            enabled: true,
+                            color: 'rgba(17,24,39,0.6)',
+                            size: 12,
+                            x: 0,
+                            y: 3
+                        },
+                        margin: {
+                            top: 12,
+                            right: 12,
+                            bottom: 12,
+                            left: 12
+                        },
+                        chosen: {
+                            node: function(values, id, selected, hovering) {
+                                if (hovering) {
+                                    values.shadowSize = 12;
+                                    values.shadowColor = 'rgba(168,85,247,0.6)';
+                                    values.borderWidth = 2;
+                                }
+                            }
+                        }
+                    },
+                    edges: {
+                        width: 1.5,
+                        color: { 
+                            color: 'rgba(168,85,247,0.15)',
+                            highlight: 'rgba(255,215,0,0.9)',
+                            hover: 'rgba(255,215,0,0.7)'
+                        },
+                        smooth: {
+                            type: 'curvedCW',
+                            roundness: 0.2,
+                            forceDirection: 'none'
+                        },
+                        shadow: {
+                            enabled: true,
+                            color: 'rgba(17,24,39,0.3)',
+                            size: 6,
+                            x: 0,
+                            y: 2
+                        },
+                        length: 200,
+                        scaling: {
+                            min: 1,
+                            max: 6
+                        },
+                        selectionWidth: 2,
+                        hoverWidth: 2
+                    },
+                                    physics: {
+                    enabled: true,
+                    barnesHut: {
+                        gravitationalConstant: -1200,
+                        centralGravity: 0.15,
+                        springLength: 150,
+                        springConstant: 0.02,
+                        damping: 0.12,
+                        avoidOverlap: 0.2
+                    },
+                    maxVelocity: 100,
+                    minVelocity: 0.1,
+                    solver: 'barnesHut',
+                    stabilization: {
+                        enabled: true,
+                        iterations: 1500,
+                        updateInterval: 35,
+                        fit: true
+                    },
+                    adaptiveTimestep: false,
+                    timestep: 0.3
+                },
+                                    interaction: {
+                    hover: true,
+                    tooltipDelay: 150,
+                    zoomView: true,
+                    dragView: true,
+                    dragNodes: true,
+                    selectConnectedEdges: false,
+                    hoverConnectedEdges: false,
+                    keyboard: {
+                        enabled: true,
+                        speed: { x: 10, y: 10, zoom: 0.02 },
+                        bindToWindow: false
+                    },
+                    multiselect: false,
+                    navigationButtons: false,
+                    zoomSpeed: 1.0
+                },
+                                    layout: {
+                    improvedLayout: true,
+                    clusterThreshold: 150,
+                    hierarchical: false,
+                    randomSeed: 2
+                }
+                };
+
+                            memoryNetwork = new vis.Network(container, networkData, options);
+            
+            // Add click interaction
+            memoryNetwork.on('click', function(params) {
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    const node = networkData.nodes.find(n => n.id === nodeId);
+                    if (node) {
+                        alert(`Memory: ${node.content}\nScore: ${node.score}`);
+                    }
+                }
+            });
+
+            // Improve dragging responsiveness
+            memoryNetwork.on('dragStart', function(params) {
+                // Temporarily increase physics responsiveness during drag
+                memoryNetwork.setOptions({
+                    physics: {
+                        barnesHut: {
+                            springConstant: 0.04,
+                            damping: 0.2,
+                            centralGravity: 0.1
+                        },
+                        maxVelocity: 150
+                    }
+                });
+            });
+
+            let dragUpdateThrottle = null;
+            
+            memoryNetwork.on('dragging', function(params) {
+                // Throttle glow updates during drag for better performance
+                if (params.nodes.length > 0 && !dragUpdateThrottle) {
+                                            dragUpdateThrottle = requestAnimationFrame(() => {
+                        const nodeId = params.nodes[0];
+                        if (nodeGlowLevels[nodeId] > 0.01) {
+                            updateNodeGlow(nodeId);
+                        }
+                        dragUpdateThrottle = null;
+                    }); // Use requestAnimationFrame for smooth 60fps
+                }
+            });
+
+            memoryNetwork.on('dragEnd', function(params) {
+                // Restore normal physics after drag
+                setTimeout(() => {
+                    memoryNetwork.setOptions({
+                        physics: {
+                            barnesHut: {
+                                springConstant: 0.02,
+                                damping: 0.12,
+                                centralGravity: 0.15
+                            },
+                            maxVelocity: 100
+                        }
+                    });
+                }, 100);
+            });
+
+            let stabilizationThrottle = null;
+            
+            // Update all node glow positions when the network is stabilizing/moving (throttled)
+            memoryNetwork.on('stabilizationProgress', () => {
+                if (!stabilizationThrottle) {
+                    stabilizationThrottle = requestAnimationFrame(() => {
+                        for (const nodeId in nodeGlowLevels) {
+                            if (nodeGlowLevels[nodeId] > 0.01) {
+                                updateNodeGlow(nodeId);
+                            }
+                        }
+                        stabilizationThrottle = null;
+                    }); // Use requestAnimationFrame for smooth updates
+                }
+            });
+
+            // Disable physics temporarily, spread nodes, then re-enable
+            setTimeout(() => {
+                memoryNetwork.setOptions({ physics: { enabled: false } });
+                spreadNodesAcrossContainer();
+                
+                setTimeout(() => {
+                    memoryNetwork.setOptions({ physics: { enabled: true } });
+                    memoryNetwork.fit({
+                        animation: {
+                            duration: 200,
+                            easingFunction: 'easeInOutQuad'
+                        }
+                    });
+                }, 500);
+            }, 1000);
+
+            console.log('🧠 Memory network initialized');
+            }
+
+            function loadSampleData() {
+                // Initialize node glow levels
+                sampleMemories.forEach(mem => {
+                    nodeGlowLevels[mem.id] = 0;
+                });
+                
+                // Create nodes with elegant Apple-style design
+                // Extract all scores for proportional sizing
+                const allScores = sampleMemories.map(mem => mem.score || 0);
+                
+                const nodes = sampleMemories.map(mem => {
+                    const intensity = Math.max(0.7, Math.min(1, mem.score / 100));
+                    // Use proportional sizing instead of linear sizing
+                    const size = calculateProportionalNodeSize(mem.score || 0, allScores);
+                    
+                    return {
+                        id: mem.id,
+                        label: mem.content.length > 25 ? mem.content.substring(0, 25) + '…' : mem.content,
+                        title: mem.content,
+                        size: size,
+                        color: {
+                            background: `rgba(35,4,55,${intensity})`,
+                            border: `rgba(255,255,255,${Math.min(0.4, intensity * 0.5)})`,
+                            highlight: {
+                                background: `rgba(70,9,107,${intensity})`,
+                                border: 'rgba(255,255,255,0.8)'
+                            },
+                            hover: {
+                                background: `rgba(50,6,80,${intensity})`,
+                                border: 'rgba(255,255,255,0.6)'
+                            }
+                        },
+                        font: {
+                            size: Math.max(10, Math.min(12, 8 + size * 0.08)),
+                            color: '#ffffff',
+                            face: '-apple-system, SF Pro Display, SF Pro Text, Helvetica Neue, Helvetica, Arial, sans-serif',
+                            strokeWidth: 0,
+                            strokeColor: 'transparent'
+                        },
+                        score: mem.score,
+                        tags: mem.tags,
+                        content: mem.content
+                    };
+                });
+
+                // Create edges based on similarity (simplified for demo)
+                const edges = [];
+                for (let i = 0; i < nodes.length; i++) {
+                    for (let j = i + 1; j < nodes.length; j++) {
+                        const similarity = calculateSimilarity(nodes[i], nodes[j]);
+                        if (similarity > currentThreshold) {
+                            edges.push({
+                                from: nodes[i].id,
+                                to: nodes[j].id,
+                                value: similarity,
+                                width: Math.max(1, similarity * 6),
+                                color: {
+                                    color: `rgba(168,85,247,${Math.max(0.2, similarity * 0.8)})`,
+                                    highlight: 'rgba(255,215,0,1)',
+                                    hover: 'rgba(255,215,0,0.8)'
+                                },
+                                title: `Similarity: ${similarity.toFixed(3)}`
+                            });
+                        }
+                    }
+                }
+
+                networkData = { nodes: nodes, edges: edges };
+                
+                if (memoryNetwork) {
+                    memoryNetwork.setData(networkData);
+                }
+
+                // Update stats
+                document.getElementById('memory-count').textContent = nodes.length;
+                document.getElementById('connection-count').textContent = edges.length;
+                document.getElementById('active-memories').textContent = activeMemories.size;
+
+                console.log(`🧠 Loaded ${nodes.length} memories, ${edges.length} connections`);
+                
+                // Start glow decay system
+                startGlowDecay();
+            }
+
+            function spreadNodesAcrossContainer() {
+            if (!memoryNetwork || networkData.nodes.length === 0) return;
+            
+            const container = document.getElementById('memory-network');
+            const containerWidth = container.offsetWidth;
+            const containerHeight = container.offsetHeight;
+            
+            console.log('Container dimensions:', containerWidth, 'x', containerHeight);
+            
+            // Calculate positions to use MAXIMUM space
+            const nodeCount = networkData.nodes.length;
+            const positions = {};
+            
+            // Use 80% of the container space for maximum spread
+            const maxRadius = Math.min(containerWidth, containerHeight) * 0.45;
+            const centerX = 0;
+            const centerY = 0;
+            
+            console.log('Using radius:', maxRadius);
+            
+            networkData.nodes.forEach((node, index) => {
+                const angle = (index / nodeCount) * 2 * Math.PI;
+                const x = centerX + maxRadius * Math.cos(angle);
+                const y = centerY + maxRadius * Math.sin(angle);
+                
+                positions[node.id] = { x: x, y: y };
+                console.log(`Node ${node.id} positioned at:`, x, y);
+            });
+            
+            // Apply the positions
+            memoryNetwork.setPositions(positions);
+            console.log('🎯 Applied positions to network');
+            
+            // Force a redraw
+            memoryNetwork.redraw();
+        }
+
+        function calculateSimilarity(node1, node2) {
+                // Simple similarity based on shared tags and content overlap
+                let similarity = 0;
+                
+                // Tag similarity
+                const tags1 = new Set(node1.tags);
+                const tags2 = new Set(node2.tags);
+                const sharedTags = [...tags1].filter(tag => tags2.has(tag));
+                similarity += sharedTags.length * 0.3;
+                
+                // Content similarity (very basic)
+                const words1 = node1.content.toLowerCase().split(' ');
+                const words2 = node2.content.toLowerCase().split(' ');
+                const sharedWords = words1.filter(word => words2.includes(word) && word.length > 3);
+                similarity += sharedWords.length * 0.2;
+                
+                // Add some randomness for demo purposes
+                similarity += Math.random() * 0.3;
+                
+                return Math.min(similarity, 1);
+            }
+
+            function simulateMemoryRecall() {
+                if (!memoryNetwork || networkData.nodes.length === 0) {
+                    alert('Please load data first!');
+                    return;
+                }
+                
+                // Randomly select 1-3 memories to activate
+                const numToActivate = Math.floor(Math.random() * 3) + 1;
+                const shuffled = [...networkData.nodes].sort(() => 0.5 - Math.random());
+                const activatedMemoryIds = shuffled.slice(0, numToActivate).map(node => node.id);
+                
+                console.log('🔥 Simulating memory recall for:', activatedMemoryIds);
+                animateMemoryActivation(activatedMemoryIds);
+            }
+
+            function animateMemoryActivation(activatedMemoryIds) {
+                if (!memoryNetwork || !activatedMemoryIds.length) return;
+                
+                console.log('🔥 Animating memory activation:', activatedMemoryIds);
+                
+                // Show activity indicator
+                const indicator = document.getElementById('activity-indicator');
+                if (indicator) {
+                    indicator.classList.add('active');
+                    setTimeout(() => {
+                        if (indicator) {
+                            indicator.classList.remove('active');
+                        }
+                    }, 4000);
+                }
+                
+                // Update last search time
+                const lastSearchElement = document.getElementById('last-search');
+                if (lastSearchElement) {
+                    lastSearchElement.textContent = new Date().toLocaleTimeString();
+                }
+                
+                // Start the signal animation WITHOUT updating network data
+                setTimeout(() => {
+                    createNeuralPropagationEffect(activatedMemoryIds);
+                }, 500);
+                
+                // Update active memories count
+                activeMemories = new Set(activatedMemoryIds);
+                const activeMemoriesElement = document.getElementById('active-memories');
+                if (activeMemoriesElement) {
+                    activeMemoriesElement.textContent = activeMemories.size;
+                }
+                
+                // Clear active memories after animation completes
+                setTimeout(() => {
+                    activeMemories.clear();
+                    const activeMemoriesElement = document.getElementById('active-memories');
+                    if (activeMemoriesElement) {
+                        activeMemoriesElement.textContent = '0';
+                    }
+                }, 5000);
+            }
+
+            function createNeuralPropagationEffect(activatedMemoryIds) {
+                // Reset global visited nodes for new simulation
+                globalVisitedNodes.clear();
+                
+                // Add immediate effects to activated nodes
+                activatedMemoryIds.forEach(startNodeId => {
+                    // Give initial activated nodes immediate glow, pulse, and vibration
+                    addNodeGlow(startNodeId, 1.0);
+                    createNodePulse(startNodeId, 1.0);
+                    createNodeVibration(startNodeId, 1.0);
+                });
+                
+                // Start signal propagation from each activated node
+                activatedMemoryIds.forEach(startNodeId => {
+                    propagateSignalFromNode(startNodeId, 0, new Set(), 1.0);
+                });
+            }
+
+            // Global visited tracking to prevent infinite loops
+            let globalVisitedNodes = new Set();
+            
+            async function propagateSignalFromNode(currentNodeId, hopCount, visitedNodes, signalStrength) {
+                // Stop if we've reached max hops, signal is too weak, or node already visited globally
+                if (hopCount >= 5 || signalStrength < 0.15 || globalVisitedNodes.has(currentNodeId)) {
+                    return;
+                }
+                
+                // Add current node to both local and global visited sets
+                const newVisited = new Set(visitedNodes);
+                newVisited.add(currentNodeId);
+                globalVisitedNodes.add(currentNodeId);
+                
+                // Add glow to current node
+                addNodeGlow(currentNodeId, signalStrength);
+                
+                // Find all connected neighbors
+                const neighbors = getConnectedNeighbors(currentNodeId);
+                
+                // Filter out already visited neighbors (check global visited)
+                const unvisitedNeighbors = neighbors.filter(neighborId => !globalVisitedNodes.has(neighborId));
+                
+                if (unvisitedNeighbors.length === 0) {
+                    return; // No more neighbors to visit
+                }
+                
+                // Propagate to each neighbor with staggered timing
+                const propagationPromises = unvisitedNeighbors.map((neighborId, index) => {
+                    return new Promise(resolve => {
+                        setTimeout(async () => {
+                            const newStrength = signalStrength * 0.85; // Less signal degradation
+                            
+                            // Animate signal to neighbor with hop count for fading trails
+                            await animateSignalToNeighbor(currentNodeId, neighborId, newStrength, `hop-${hopCount}-${index}`, hopCount);
+                            
+                            // Continue propagation from neighbor after shorter delay
+                            setTimeout(() => {
+                                propagateSignalFromNode(neighborId, hopCount + 1, newVisited, newStrength);
+                                resolve();
+                            }, 50); // Even shorter delay between hops
+                        }, index * 75); // Even faster staggering
+                    });
+                });
+                
+                await Promise.all(propagationPromises);
+            }
+
+            function getConnectedNeighbors(nodeId) {
+                const neighbors = [];
+                networkData.edges.forEach(edge => {
+                    if (edge.from === nodeId) {
+                        neighbors.push(edge.to);
+                    } else if (edge.to === nodeId) {
+                        neighbors.push(edge.from);
+                    }
+                });
+                return neighbors;
+            }
+
+
+
+            async function animateSignalToNeighbor(fromId, toId, strength, signalId, hopCount = 0) {
+                return new Promise(resolve => {
+                    activeSignals++;
+                    
+                    // Calculate fading strength based on hop count (50% fainter each hop)
+                    const fadedStrength = strength * Math.pow(0.8, hopCount);
+                    
+                    const particle = createSignalParticle(fadedStrength, signalId);
+                    const container = document.getElementById('memory-network');
+                    const containerRect = container.getBoundingClientRect();
+                    
+                    const animationDuration = 100; // Much faster signal travel
+                    const startTime = Date.now();
+                    const trail = [];
+                    
+                    const animate = () => {
+                        const elapsed = Date.now() - startTime;
+                        const progress = Math.min(elapsed / animationDuration, 1);
+                        
+                        const positions = memoryNetwork.getPositions([fromId, toId]);
+                        const fromPos = memoryNetwork.canvasToDOM(positions[fromId]);
+                        const toPos = memoryNetwork.canvasToDOM(positions[toId]);
+                        
+                        const eased = easeInOutCubic(progress);
+                        
+                        // Create curved path similar to vis.js edges
+                        const { currentX, currentY } = getCurvedPathPosition(fromPos, toPos, eased, fromId, toId);
+                        
+                        particle.style.left = (containerRect.left + currentX) + 'px';
+                        particle.style.top = (containerRect.top + currentY) + 'px';
+                        
+                        // Create continuous trail effect
+                        trail.push({ x: currentX, y: currentY, time: elapsed });
+                        
+                        // Keep trail length manageable
+                        if (trail.length > 15) {
+                            trail.shift();
+                        }
+                        
+                        // Draw continuous trail with faded strength
+                        if (trail.length > 1) {
+                            drawContinuousTrail(trail, fadedStrength, containerRect, signalId);
+                        }
+                        
+                        // Dynamic scaling and opacity using faded strength
+                        const scale = fadedStrength * (1 + Math.sin(progress * Math.PI * 2) * 0.2);
+                        particle.style.transform = `translate(-50%, -50%) scale(${scale})`;
+                        particle.style.opacity = Math.max(0.2, fadedStrength * (Math.sin(progress * Math.PI) * 0.7 + 0.3));
+                        
+                        if (progress < 1) {
+                            requestAnimationFrame(animate);
+                        } else {
+                            // Signal reaches destination with faded strength
+                            addNodeGlow(toId, fadedStrength);
+                            createNodePulse(toId, fadedStrength);
+                            createNodeVibration(toId, fadedStrength);
+                            
+                            particle.style.transition = 'all 0.4s ease-out';
+                            particle.style.opacity = '0';
+                            particle.style.transform = 'translate(-50%, -50%) scale(0)';
+                            
+                            setTimeout(() => {
+                                particle.remove();
+                                // Clean up trail for this signal
+                                const trailElement = document.querySelector(`.continuous-trail-${signalId}`);
+                                if (trailElement) {
+                                    trailElement.style.transition = 'opacity 0.3s ease-out';
+                                    trailElement.style.opacity = '0';
+                                    setTimeout(() => trailElement.remove(), 300);
+                                }
+                                activeSignals--;
+                                resolve();
+                            }, 400);
+                        }
+                    };
+                    
+                    requestAnimationFrame(animate);
+                });
+            }
+
+            function createSignalParticle(strength, signalId) {
+                const particle = document.createElement('div');
+                const size = Math.max(16, 32 * strength); // Larger particles
+                const intensity = Math.max(0.7, strength); // Higher minimum intensity
+                
+                particle.className = `signal-particle-${signalId}`;
+                particle.style.position = 'fixed';
+                particle.style.width = size + 'px';
+                particle.style.height = size + 'px';
+                particle.style.borderRadius = '50%';
+                particle.style.background = `radial-gradient(circle, rgba(255, 255, 255, ${intensity}) 0%, rgba(255, 215, 0, ${intensity * 0.9}) 30%, rgba(255, 152, 0, ${intensity * 0.7}) 100%)`;
+                particle.style.boxShadow = `0 0 ${size * 2}px rgba(255, 215, 0, ${intensity}), 0 0 ${size * 4}px rgba(255, 152, 0, ${intensity * 0.8}), 0 0 ${size * 6}px rgba(255, 215, 0, ${intensity * 0.4})`;
+                particle.style.zIndex = '995';
+                particle.style.pointerEvents = 'none';
+                particle.style.transform = 'translate(-50%, -50%)';
+                document.body.appendChild(particle);
+                return particle;
+            }
+
+            function drawContinuousTrail(trail, strength, containerRect, signalId = 'default') {
+                // Remove any existing trail for this specific signal
+                const existingTrail = document.querySelector(`.continuous-trail-${signalId}`);
+                if (existingTrail) {
+                    existingTrail.remove();
+                }
+                
+                // Create SVG for smooth trail
+                const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+                svg.className = `continuous-trail continuous-trail-${signalId}`;
+                svg.style.position = 'fixed';
+                svg.style.top = '0';
+                svg.style.left = '0';
+                svg.style.width = '100vw';
+                svg.style.height = '100vh';
+                svg.style.pointerEvents = 'none';
+                svg.style.zIndex = '990';
+                document.body.appendChild(svg);
+                
+                // Create path for trail
+                const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+                
+                // Build path data
+                let pathData = '';
+                trail.forEach((point, index) => {
+                    const x = containerRect.left + point.x;
+                    const y = containerRect.top + point.y;
+                    
+                    if (index === 0) {
+                        pathData += `M ${x} ${y}`;
+                    } else {
+                        pathData += ` L ${x} ${y}`;
+                    }
+                });
+                
+                path.setAttribute('d', pathData);
+                path.setAttribute('stroke', `rgba(255, 215, 0, ${strength * 0.8})`);
+                path.setAttribute('stroke-width', Math.max(3, strength * 6));
+                path.setAttribute('fill', 'none');
+                path.setAttribute('stroke-linecap', 'round');
+                path.setAttribute('stroke-linejoin', 'round');
+                path.style.filter = `drop-shadow(0 0 ${strength * 8}px rgba(255, 215, 0, ${strength * 0.6}))`;
+                
+                // Add gradient effect
+                const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+                const gradient = document.createElementNS('http://www.w3.org/2000/svg', 'linearGradient');
+                gradient.setAttribute('id', 'trailGradient');
+                gradient.setAttribute('gradientUnits', 'userSpaceOnUse');
+                
+                const stop1 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                stop1.setAttribute('offset', '0%');
+                stop1.setAttribute('stop-color', `rgba(255, 215, 0, 0)`);
+                
+                const stop2 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                stop2.setAttribute('offset', '70%');
+                stop2.setAttribute('stop-color', `rgba(255, 215, 0, ${strength * 0.6})`);
+                
+                const stop3 = document.createElementNS('http://www.w3.org/2000/svg', 'stop');
+                stop3.setAttribute('offset', '100%');
+                stop3.setAttribute('stop-color', `rgba(255, 255, 255, ${strength})`);
+                
+                gradient.appendChild(stop1);
+                gradient.appendChild(stop2);
+                gradient.appendChild(stop3);
+                defs.appendChild(gradient);
+                svg.appendChild(defs);
+                
+                path.setAttribute('stroke', 'url(#trailGradient)');
+                svg.appendChild(path);
+                
+                // Auto-remove trail after animation (optimized)
+                setTimeout(() => {
+                    if (svg.parentNode) {
+                        svg.remove(); // Direct removal for better performance
+                    }
+                }, 150); // Shorter timeout for faster cleanup
+            }
+
+            function addNodeGlow(nodeId, strength) {
+                // Set glow strength (don't accumulate, just set to current strength)
+                nodeGlowLevels[nodeId] = Math.min(1.0, strength);
+                updateNodeGlow(nodeId);
+                createNodePulse(nodeId, strength);
+                
+                // Restart decay interval if not already running
+                if (!glowDecayInterval) {
+                    startGlowDecay();
+                }
+            }
+
+            function updateNodeGlow(nodeId) {
+                const glowLevel = nodeGlowLevels[nodeId];
+                if (glowLevel <= 0.01) {
+                    const existingGlow = document.getElementById(`node-glow-${nodeId}`);
+                    if (existingGlow) existingGlow.remove();
+                    return;
+                }
+
+                // Cache DOM queries for better performance
+                let glow = document.getElementById(`node-glow-${nodeId}`);
+                
+                if (!glow) {
+                    glow = document.createElement('div');
+                    glow.id = `node-glow-${nodeId}`;
+                    glow.className = 'persistent-node-glow';
+                    glow.style.position = 'fixed';
+                    glow.style.borderRadius = '50%';
+                    glow.style.pointerEvents = 'none';
+                                            glow.style.zIndex = '992';
+                    glow.style.transition = 'opacity 0.3s ease-out'; // Keep opacity transition for smooth appearance
+                    glow.style.animation = 'gentle-pulse 2s ease-in-out infinite';
+                    document.body.appendChild(glow);
+                }
+
+                // Get positions only once
+                const positions = memoryNetwork.getPositions([nodeId]);
+                const nodePos = memoryNetwork.canvasToDOM(positions[nodeId]);
+                const container = document.getElementById('memory-network');
+                const containerRect = container.getBoundingClientRect();
+                
+                const size = Math.max(60, 120 * glowLevel);
+                
+                // Batch style updates using transform for better performance
+                const x = containerRect.left + nodePos.x - size/2;
+                const y = containerRect.top + nodePos.y - size/2;
+                
+                glow.style.transform = `translate(${x}px, ${y}px)`;
+                glow.style.width = size + 'px';
+                glow.style.height = size + 'px';
+                glow.style.background = `radial-gradient(circle, rgba(168,85,247,${Math.floor(glowLevel * 120).toString(16).padStart(2, '0')}) 0%, rgba(168,85,247,${Math.floor(glowLevel * 60).toString(16).padStart(2, '0')}) 40%, transparent 70%)`;
+                glow.style.opacity = Math.min(0.8, glowLevel * 1.1);
+                glow.style.filter = `blur(${Math.max(2, 6 * glowLevel)}px)`;
+                glow.style.setProperty('--glow-opacity', glowLevel.toString());
+            }
+
+            function createNodePulse(nodeId, strength) {
+                const positions = memoryNetwork.getPositions([nodeId]);
+                const nodePos = memoryNetwork.canvasToDOM(positions[nodeId]);
+                const container = document.getElementById('memory-network');
+                const containerRect = container.getBoundingClientRect();
+                
+                for (let i = 0; i < Math.ceil(strength * 2); i++) {
+                    setTimeout(() => {
+                        const pulse = document.createElement('div');
+                        const size = 80 * strength;
+                        
+                        pulse.style.position = 'fixed';
+                        pulse.style.left = (containerRect.left + nodePos.x - size/2) + 'px';
+                        pulse.style.top = (containerRect.top + nodePos.y - size/2) + 'px';
+                        pulse.style.width = size + 'px';
+                        pulse.style.height = size + 'px';
+                        pulse.style.borderRadius = '50%';
+                        pulse.style.border = '3px solid rgba(168,85,247,0.8)';
+                        pulse.style.pointerEvents = 'none';
+                        pulse.style.zIndex = '993';
+                        pulse.style.opacity = strength;
+                        document.body.appendChild(pulse);
+
+                        pulse.style.transition = 'all 0.8s ease-out';
+                        pulse.style.transform = 'scale(2.5)';
+                        pulse.style.opacity = '0';
+
+                        setTimeout(() => pulse.remove(), 800);
+                    }, i * 150);
+                }
+            }
+
+            function createNodeVibration(nodeId, strength) {
+                const positions = memoryNetwork.getPositions([nodeId]);
+                const nodePos = memoryNetwork.canvasToDOM(positions[nodeId]);
+                const container = document.getElementById('memory-network');
+                const containerRect = container.getBoundingClientRect();
+                
+                // Create vibration effect overlay
+                const vibration = document.createElement('div');
+                const size = Math.max(40, 60 * strength);
+                
+                vibration.style.position = 'fixed';
+                vibration.style.left = (containerRect.left + nodePos.x - size/2) + 'px';
+                vibration.style.top = (containerRect.top + nodePos.y - size/2) + 'px';
+                vibration.style.width = size + 'px';
+                vibration.style.height = size + 'px';
+                vibration.style.borderRadius = '50%';
+                vibration.style.background = `radial-gradient(circle, rgba(255,255,255,${strength * 0.8}) 0%, rgba(255,215,0,${strength * 0.6}) 50%, transparent 100%)`;
+                vibration.style.pointerEvents = 'none';
+                vibration.style.zIndex = '994';
+                vibration.style.opacity = Math.min(0.9, strength * 1.2);
+                document.body.appendChild(vibration);
+
+                // Create intense vibration animation
+                const vibrationIntensity = Math.max(2, strength * 8);
+                const vibrationDuration = Math.max(200, strength * 400);
+                const vibrationSteps = 12;
+                
+                let step = 0;
+                const vibrateInterval = setInterval(() => {
+                    if (step >= vibrationSteps) {
+                        clearInterval(vibrateInterval);
+                        vibration.style.transition = 'all 0.2s ease-out';
+                        vibration.style.opacity = '0';
+                        vibration.style.transform = 'scale(0.5)';
+                        setTimeout(() => vibration.remove(), 200);
+                        return;
+                    }
+                    
+                    // Random shake in all directions
+                    const offsetX = (Math.random() - 0.5) * vibrationIntensity;
+                    const offsetY = (Math.random() - 0.5) * vibrationIntensity;
+                    const scale = 1 + (Math.random() - 0.5) * 0.3 * strength;
+                    
+                    vibration.style.transform = `translate(${offsetX}px, ${offsetY}px) scale(${scale})`;
+                    
+                    step++;
+                }, vibrationDuration / vibrationSteps);
+            }
+
+            let glowDecayInterval = null;
+            
+            function startGlowDecay() {
+                // Clear any existing interval
+                if (glowDecayInterval) {
+                    clearInterval(glowDecayInterval);
+                }
+                
+                glowDecayInterval = setInterval(() => {
+                    let hasActiveGlows = false;
+                    
+                    for (const nodeId in nodeGlowLevels) {
+                        if (nodeGlowLevels[nodeId] > 0.001) {
+                            nodeGlowLevels[nodeId] *= 0.3; // Very fast decay
+                            updateNodeGlow(nodeId);
+                            hasActiveGlows = true;
+                        } else if (nodeGlowLevels[nodeId] > 0) {
+                            nodeGlowLevels[nodeId] = 0;
+                            const existingGlow = document.getElementById(`node-glow-${nodeId}`);
+                            if (existingGlow) {
+                                existingGlow.style.transition = 'opacity 0.2s ease-out';
+                                existingGlow.style.opacity = '0';
+                                setTimeout(() => existingGlow.remove(), 200);
+                            }
+                        }
+                    }
+                    
+                    // Stop the interval if no active glows to save performance
+                    if (!hasActiveGlows) {
+                        clearInterval(glowDecayInterval);
+                        glowDecayInterval = null;
+                    }
+                }, 100); // Reduced frequency for better performance
+            }
+
+            function easeInOutCubic(t) {
+                return t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+            }
+
+            function getCurvedPathPosition(fromPos, toPos, progress, fromId, toId) {
+                // Find the actual edge between these nodes
+                const edge = networkData.edges.find(e => 
+                    (e.from === fromId && e.to === toId) || 
+                    (e.from === toId && e.to === fromId)
+                );
+                
+                if (!edge) {
+                    // If no edge found, use straight line
+                    const currentX = fromPos.x + (toPos.x - fromPos.x) * progress;
+                    const currentY = fromPos.y + (toPos.y - fromPos.y) * progress;
+                    return { currentX, currentY };
+                }
+                
+                // Calculate distance and direction
+                const dx = toPos.x - fromPos.x;
+                const dy = toPos.y - fromPos.y;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                // Use the global edge configuration (curvedCW with roundness 0.25)
+                // For curvedCW (clockwise), the curve goes to the right when traveling from->to
+                let curveDirection = -1; // Flip to opposite direction
+                
+                // Determine if we're going from->to or to->from to maintain consistent curve direction
+                const isReversed = edge.from === toId;
+                if (isReversed) {
+                    curveDirection = 1; // Reverse for opposite direction
+                }
+                
+                // Use the roundness value from global configuration (0.25 for curvedCW)
+                const roundness = 0.25;
+                const curveOffset = distance * roundness * curveDirection;
+                
+                // Calculate perpendicular vector (rotated 90 degrees)
+                const perpX = -dy / distance;
+                const perpY = dx / distance;
+                
+                // Calculate control point for quadratic bezier curve
+                const midX = (fromPos.x + toPos.x) / 2 + perpX * curveOffset;
+                const midY = (fromPos.y + toPos.y) / 2 + perpY * curveOffset;
+                
+                // Quadratic bezier curve calculation
+                const t = progress;
+                const currentX = (1 - t) * (1 - t) * fromPos.x + 
+                               2 * (1 - t) * t * midX + 
+                               t * t * toPos.x;
+                const currentY = (1 - t) * (1 - t) * fromPos.y + 
+                               2 * (1 - t) * t * midY + 
+                               t * t * toPos.y;
+                
+                return { currentX, currentY };
+            }
+
+
+
+            // Utility functions
+            function addRandomMemory() {
+                const randomMemories = [
+                    'I enjoy reading mystery novels',
+                    'I prefer winter over summer',
+                    'I have been to Paris twice',
+                    'I collect vintage postcards',
+                    'I speak three languages fluently',
+                    'I love spicy food',
+                    'I practice meditation daily',
+                    'I own a motorcycle',
+                    'I volunteer at the local shelter',
+                    'I play chess competitively'
+                ];
+                
+                const newMemory = {
+                    id: `mem_${Date.now()}`,
+                    content: randomMemories[Math.floor(Math.random() * randomMemories.length)],
+                    score: Math.floor(Math.random() * 40) + 60,
+                    tags: ['random', 'test']
+                };
+                
+                sampleMemories.push(newMemory);
+                loadSampleData();
+            }
+
+            function clearNetwork() {
+                if (confirm('Clear all memories and start fresh?')) {
+                    sampleMemories.length = 0;
+                    networkData = { nodes: [], edges: [] };
+                    memoryNetwork.setData(networkData);
+                    
+                    // Clear glow levels
+                    for (const nodeId in nodeGlowLevels) {
+                        nodeGlowLevels[nodeId] = 0;
+                    }
+                    
+                    // Clear all performance intervals and throttles
+                    if (glowDecayInterval) {
+                        clearInterval(glowDecayInterval);
+                        glowDecayInterval = null;
+                    }
+                    if (dragUpdateThrottle) {
+                        cancelAnimationFrame(dragUpdateThrottle);
+                        dragUpdateThrottle = null;
+                    }
+                    if (stabilizationThrottle) {
+                        cancelAnimationFrame(stabilizationThrottle);
+                        stabilizationThrottle = null;
+                    }
+                    
+                    // Remove all visual elements
+                    document.querySelectorAll('.persistent-node-glow').forEach(el => el.remove());
+                    document.querySelectorAll('[class*="signal-particle"]').forEach(el => el.remove());
+                    document.querySelectorAll('.continuous-trail').forEach(el => el.remove());
+                    
+                    document.getElementById('memory-count').textContent = '0';
+                    document.getElementById('connection-count').textContent = '0';
+                    document.getElementById('active-memories').textContent = '0';
+                    activeSignals = 0;
+                }
+            }
+
+            function resetPhysics() {
+                if (memoryNetwork) {
+                    memoryNetwork.stabilize();
+                }
+            }
+
+                    function togglePhysics() {
+            if (memoryNetwork) {
+                const currentPhysics = memoryNetwork.physics.physicsEnabled;
+                memoryNetwork.setOptions({ physics: { enabled: !currentPhysics } });
+                console.log('Physics:', !currentPhysics ? 'enabled' : 'disabled');
+            }
+        }
+
+        function spreadNodes() {
+            if (memoryNetwork) {
+                // Turn off physics, spread nodes, turn physics back on
+                memoryNetwork.setOptions({ physics: { enabled: false } });
+                spreadNodesAcrossContainer();
+                
+                setTimeout(() => {
+                    memoryNetwork.setOptions({ physics: { enabled: true } });
+                    memoryNetwork.fit({
+                        animation: {
+                            duration: 300,
+                            easingFunction: 'easeInOutQuad'
+                        }
+                    });
+                }, 200);
+            }
+        }
+
+        function debugNetwork() {
+            const container = document.getElementById('memory-network');
+            const positions = memoryNetwork.getPositions();
+            
+            alert(`Container: ${container.offsetWidth} x ${container.offsetHeight}\n` +
+                  `Current node positions:\n` +
+                  Object.keys(positions).map(id => 
+                      `${id}: (${positions[id].x.toFixed(0)}, ${positions[id].y.toFixed(0)})`
+                  ).join('\n')
+            );
+        }
+
+        // Manual refresh button handler
+        function refreshMemoryNetworkManual() {
+            console.log('🔄 Manual refresh triggered');
+            loadSampleData();
+        }
+
+        // Auto-refresh toggle functionality
+        function toggleAutoRefresh() {
+            autoRefreshEnabled = !autoRefreshEnabled;
+            
+            if (autoRefreshEnabled) {
+                autoRefreshInterval = setInterval(loadSampleData, 30000);
+                console.log('🔄 Auto-refresh enabled (30s interval)');
+                
+                // Update button text
+                const button = document.getElementById('auto-refresh-toggle');
+                if (button) button.textContent = 'Disable Auto-refresh';
+            } else {
+                if (autoRefreshInterval) {
+                    clearInterval(autoRefreshInterval);
+                    autoRefreshInterval = null;
+                }
+                console.log('⏸️ Auto-refresh disabled');
+                
+                // Update button text
+                const button = document.getElementById('auto-refresh-toggle');
+                if (button) button.textContent = 'Enable Auto-refresh';
+            }
+        }
+
+            // Threshold slider handler
+            document.getElementById('threshold-slider').addEventListener('input', function(e) {
+                currentThreshold = parseFloat(e.target.value);
+                document.getElementById('threshold-value').textContent = currentThreshold.toFixed(2);
+                loadSampleData(); // Reload with new threshold
+            });
+
+            // Initialize
+            document.addEventListener('DOMContentLoaded', function() {
+                initializeMemoryNetwork();
+                loadSampleData();
+                
+                console.log('🎉 Memory Network Visualization Ready!');
+                console.log('✨ Auto-refresh disabled by default for persistent node positions.');
+                console.log('💡 Use "Manual Refresh" or "Enable Auto-refresh" as needed.');
+                console.log('🔥 Click "Simulate Memory Recall" to see the beautiful neural animations!');
+            });
+        </script>
+    </body>
+    </html> 
+</html> 
